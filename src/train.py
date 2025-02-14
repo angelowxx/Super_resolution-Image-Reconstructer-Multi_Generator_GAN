@@ -53,8 +53,8 @@ def train_example(num_epochs, num_models):
     avg_losses = []
 
     for epoch in range(num_epochs):
-        if epoch > -1:
-            g_criterion = PerceptualLoss(device=device)
+        #if epoch > -1:
+        #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, d_criterion, g_criterion, device, epoch,
                                    num_epochs)
         avg_losses.append(avg_loss)
@@ -198,5 +198,5 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
     # 如果直接运行 train.py，则调用训练示例
-    train_example(3, 1)
+    train_example(20, 1)
     train_example(20, 3)
