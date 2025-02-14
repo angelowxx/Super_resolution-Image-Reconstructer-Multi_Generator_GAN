@@ -66,10 +66,10 @@ def shuffle_lists_in_same_order(*lists):
     # Combine the lists into a list of tuples
     combined = list(zip(*lists))
 
-    # Shuffle the combined list
-    random.shuffle(combined)
+    # Sort the combined list based on the last element in each tuple
+    combined.sort(key=lambda x: x[-1])
 
-    # Unpack the shuffled list back into individual lists
+    # Unpack the sorted list back into individual lists
     return [list(t) for t in zip(*combined)]
 
 
