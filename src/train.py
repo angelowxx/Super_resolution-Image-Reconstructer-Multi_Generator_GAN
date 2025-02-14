@@ -50,7 +50,7 @@ def train_example(num_epochs, num_models):
     val_loader = DataLoader(val_data, batch_size=5, shuffle=True)
 
     avg_losses = []
-    gen_losses = [2 for i in range(len(model))]
+    gen_losses = [1 for i in range(len(model))]
 
     for epoch in range(num_epochs):
         #if epoch > -1:
