@@ -1,0 +1,38 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="15">
+            <item index="0" class="java.lang.String" itemvalue="pandas" />
+            <item index="1" class="java.lang.String" itemvalue="torch" />
+            <item index="2" class="java.lang.String" itemvalue="regex" />
+            <item index="3" class="java.lang.String" itemvalue="langgraph" />
+            <item index="4" class="java.lang.String" itemvalue="google-genai" />
+            <item index="5" class="java.lang.String" itemvalue="chromadb" />
+            <item index="6" class="java.lang.String" itemvalue="langchain_chroma" />
+            <item index="7" class="java.lang.String" itemvalue="openai" />
+            <item index="8" class="java.lang.String" itemvalue="langchain-community" />
+            <item index="9" class="java.lang.String" itemvalue="google-generativeai" />
+            <item index="10" class="java.lang.String" itemvalue="sentence_transformers" />
+            <item index="11" class="java.lang.String" itemvalue="langchain-openai" />
+            <item index="12" class="java.lang.String" itemvalue="customtkinter" />
+            <item index="13" class="java.lang.String" itemvalue="scikit-learn" />
+            <item index="14" class="java.lang.String" itemvalue="nltk" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+    <inspection_tool class="PyPep8NamingInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true">
+      <option name="ignoredErrors">
+        <list>
+          <option value="N801" />
+          <option value="N802" />
+          <option value="N806" />
+          <option value="N812" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
