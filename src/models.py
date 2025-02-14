@@ -100,6 +100,7 @@ class Discriminator(nn.Module):
 class PerceptualLoss(nn.Module):
     def __init__(self, model_type='vgg19', layer_index=36, device='cpu'):
         super(PerceptualLoss, self).__init__()
+        self.device = device
         if model_type == 'vgg19':
             vgg = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features  # 预训练模型
         elif model_type == 'vgg16':
