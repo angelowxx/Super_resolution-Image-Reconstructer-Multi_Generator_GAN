@@ -22,7 +22,7 @@ def train_example(num_epochs, num_models):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    d_criterion = torch.nn.MSELoss()
+    d_criterion = torch.nn.L1Loss()
     g_criterion = torch.nn.L1Loss()
     discriminator = Discriminator().to(device)
     model = [SRResNet().to(device) for i in range(num_models)]
