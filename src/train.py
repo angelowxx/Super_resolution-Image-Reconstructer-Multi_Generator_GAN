@@ -36,11 +36,11 @@ def train_example(num_epochs, num_models):
     )
     lr_schedulers = []
     for i in range(len(model)):
-        scheduler = scheduler(
+        g_lr_scheduler = scheduler(
             optimizer=optimizer[i],
             T_max=num_epochs,
         )
-        lr_schedulers.append(scheduler)
+        lr_schedulers.append(g_lr_scheduler)
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
@@ -109,7 +109,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
                 first_loss = g_loss
 
         total_loss += first_loss
-        t.set_postfix(loss=first_loss)
+        t.set_postfix(g_loss=first_loss, d_loss=d_loss)
 
     avg_loss = total_loss / len(train_loader)
     print(f"Epoch [{epoch+1}/{num_epochs}] Training Loss: {avg_loss:.6f}")
