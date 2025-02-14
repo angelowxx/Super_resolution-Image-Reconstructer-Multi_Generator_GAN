@@ -101,7 +101,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             generator = model[i]
             optimizer = g_optimizer[i]
             g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                              g_criterion, optimizer, pre_loss, pre_res)
+                                              g_criterion, optimizer, pre_loss, pre_res, epoch, num_epochs)
             pre_loss = g_loss
             pre_res = sr_imgs
             if i == 0:
@@ -115,26 +115,26 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
     return avg_loss
 
 
-def train_generator(generator, discriminator, lr_imgs, hr_imgs, criterion, g_optimizer, pre_loss, pre_sr_imgs):
+def train_generator(generator, discriminator, lr_imgs, hr_imgs,
+                    criterion, g_optimizer, pre_loss, pre_sr_imgs, epoch, nums_epoch):
     # --- Train Generator ---
     generator.train()
 
     sr_images = generator(lr_imgs)
 
+    g_loss = criterion(sr_images, hr_imgs)
+
     # Discriminator prediction on fake data
     fake_preds = discriminator(sr_images)
-
-    # Generator loss (fool the discriminator into thinking fake data is real)
-    g_loss = F.mse_loss(fake_preds, torch.ones_like(fake_preds))
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
     sigma = torch.normal(mean=g_loss, std=g_loss ** 2)  # 生成 sigma
     if sigma > pre_loss:
-        g_loss = criterion(sr_images, pre_sr_imgs.detach())
+        g_loss = g_loss + criterion(sr_images, pre_sr_imgs.detach())
 
     else:
-        g_loss = g_loss + criterion(sr_images, hr_imgs)
+        g_loss = g_loss + criterion(fake_preds, torch.ones_like(fake_preds))
 
     # Update generator
     g_optimizer.zero_grad()
@@ -197,5 +197,5 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
     # 如果直接运行 train.py，则调用训练示例
+    train_example(20, 1)
     train_example(20, 3)
-    train_example(20, 5)
