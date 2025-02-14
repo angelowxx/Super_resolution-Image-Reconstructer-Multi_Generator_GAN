@@ -190,7 +190,7 @@ def validate(model, val_loader, device, epoch, num_models):
             comp_list.append(comp)
         # 制作成图片网格，每行一个样本
         comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=True)
-        save_path = os.path.join(f"results{num_models}", f"epoch_{epoch}_comparison.png")
+        save_path = os.path.join(f"results{num_models}", f"epoch_{epoch+1}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
         print(f"Epoch {epoch}: Comparison image saved to {save_path}")
     return save_path
@@ -200,4 +200,3 @@ if __name__ == "__main__":
     # 如果直接运行 train.py，则调用训练示例
     train_example(30, 1)
     train_example(30, 3)
-    train_example(30, 5)
