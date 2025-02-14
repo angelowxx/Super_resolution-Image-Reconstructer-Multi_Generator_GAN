@@ -198,10 +198,7 @@ def validate(model, val_loader, device, epoch, num_models):
 
 
 if __name__ == "__main__":
-    train_example(2, 1)
-    train_example(2, 3)
-    train_example(2, 5)
 
-    train_example(20, 1)
-    train_example(20, 3)
-    train_example(20, 5)
+    train_example(25, 1)
+    train_example(25, 3)
+    train_example(25, 5)
