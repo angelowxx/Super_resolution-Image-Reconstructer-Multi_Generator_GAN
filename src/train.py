@@ -71,7 +71,8 @@ def train_example(num_epochs, num_models):
         shuffle_lists_in_same_order(model, lr_schedulers, optimizer)
 
     # Save the generator model's state_dict
-    torch.save(model[0].state_dict(), os.path.join(f'results{num_models}', 'generator_model.pth'))
+    for i in range(len(model)):
+        torch.save(model[i].state_dict(), os.path.join(f'results{num_models}', f'generator_model_{i}.pth'))
     # Plotting the loss curve
     plt.figure(figsize=(10, 6))
     plt.plot(range(1, num_epochs + 1), avg_losses, marker='o', linestyle='-', color='b', label='Training Loss')
@@ -88,7 +89,7 @@ def train_example(num_epochs, num_models):
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
                     , criterion, device, epoch, num_epochs):
     total_loss = 0
-    t = tqdm(train_loader, desc=f"Epoch [{epoch}/{num_epochs}] Training")
+    t = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{num_epochs}] Training")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
@@ -97,6 +98,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         pre_loss = 100
         pre_res = hr_imgs
         g_loss = 0
+        first_loss = 0
         for i in range(len(model)):
             generator = model[i]
             optimizer = g_optimizer[i]
@@ -104,12 +106,14 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
                                               criterion, optimizer, pre_loss, pre_res)
             pre_loss = g_loss
             pre_res = sr_imgs
+            if i == 0:
+                first_loss = g_loss
 
-        total_loss += g_loss
-        t.set_postfix(loss=g_loss)
+        total_loss += first_loss
+        t.set_postfix(loss=first_loss)
 
     avg_loss = total_loss / len(train_loader)
-    print(f"Epoch [{epoch}/{num_epochs}] Training Loss: {avg_loss:.6f}")
+    print(f"Epoch [{epoch+1}/{num_epochs}] Training Loss: {avg_loss:.6f}")
     return avg_loss
 
 
@@ -125,6 +129,8 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, criterion, g_opt
     # Generator loss (fool the discriminator into thinking fake data is real)
     g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
 
+    # 可以考虑放松一点条件，比如g_loss > pre_loss * 1.5,
+    # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
     if g_loss > pre_loss:
         g_loss = criterion(sr_images, pre_sr_imgs)
 
