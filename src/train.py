@@ -16,10 +16,7 @@ import torch.nn.functional as F
 
 
 def train_example(num_epochs, num_models):
-    """
-    此函数仅为示例，展示如何构建训练循环。
-    真实训练过程需要数据集、损失函数、数据加载器等模块。
-    """
+    print(f'Training with {num_models} generators competing!')
     # 确保结果保存目录存在
     os.makedirs(f"results{num_models}", exist_ok=True)
     os.makedirs(f'figures{num_models}', exist_ok=True)
@@ -193,11 +190,11 @@ def validate(model, val_loader, device, epoch, num_models):
         comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=True)
         save_path = os.path.join(f"results{num_models}", f"epoch_{epoch+1}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
-        print(f"Epoch {epoch}: Comparison image saved to {save_path}")
+        print(f"Epoch {epoch+1}: Comparison image saved to {save_path}")
     return save_path
 
 
 if __name__ == "__main__":
     # 如果直接运行 train.py，则调用训练示例
-    train_example(40, 1)
-    train_example(40, 3)
+    train_example(30, 1)
+    train_example(30, 3)
