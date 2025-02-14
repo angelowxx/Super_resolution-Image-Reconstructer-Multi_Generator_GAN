@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.models import SRResNet, Discriminator
+from src.models import SRResNet, Discriminator, PerceptualLoss
 from src.transformers import normalize_img_size, downward_img_quality
 from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order
 from PIL import Image
@@ -23,7 +23,8 @@ def train_example(num_epochs, num_models):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    criterion = torch.nn.MSELoss()
+    d_criterion = torch.nn.MSELoss()
+    g_criterion = torch.nn.MSELoss()
     discriminator = Discriminator().to(device)
     model = [SRResNet().to(device) for i in range(num_models)]
     optimizer = [optim.Adam(generator.parameters(), lr=0.001) for generator in model]
@@ -53,7 +54,9 @@ def train_example(num_epochs, num_models):
     avg_losses = []
 
     for epoch in range(num_epochs):
-        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, criterion, device, epoch,
+        if epoch > num_epochs/2:
+            g_criterion = PerceptualLoss()
+        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, d_criterion, g_criterion, device, epoch,
                                    num_epochs)
         avg_losses.append(avg_loss)
 
@@ -85,14 +88,14 @@ def train_example(num_epochs, num_models):
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
-                    , criterion, device, epoch, num_epochs):
+                    , d_criterion, g_criterion, device, epoch, num_epochs):
     total_loss = 0
     t = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{num_epochs}] Training")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        d_loss = train_discriminator(model[0], discriminator, lr_imgs, hr_imgs, criterion, d_optimizer)
+        d_loss = train_discriminator(model[0], discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
         pre_loss = 100
         pre_res = hr_imgs
         first_loss = 0
@@ -100,7 +103,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             generator = model[i]
             optimizer = g_optimizer[i]
             g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                              criterion, optimizer, pre_loss, pre_res)
+                                              g_criterion, optimizer, pre_loss, pre_res)
             pre_loss = g_loss
             pre_res = sr_imgs
             if i == 0:
