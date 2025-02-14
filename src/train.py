@@ -47,7 +47,7 @@ def train_example(num_epochs, num_models):
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'val')
     val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
-    val_loader = DataLoader(val_data, batch_size=5, shuffle=True)
+    val_loader = DataLoader(val_data, batch_size=16, shuffle=True)
 
     avg_losses = []
     gen_losses = [1 for i in range(len(model))]
@@ -198,6 +198,10 @@ def validate(model, val_loader, device, epoch, num_models):
 
 
 if __name__ == "__main__":
-    # 如果直接运行 train.py，则调用训练示例
+    train_example(2, 1)
+    train_example(1, 3)
+    train_example(1, 5)
+
     train_example(20, 1)
     train_example(20, 3)
+    train_example(20, 5)
