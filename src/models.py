@@ -98,7 +98,7 @@ class Discriminator(nn.Module):
 
 
 class PerceptualLoss(nn.Module):
-    def __init__(self, model_type='vgg19', layer_index=36):
+    def __init__(self, model_type='vgg19', layer_index=36, device='cpu'):
         super(PerceptualLoss, self).__init__()
         if model_type == 'vgg19':
             vgg = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features  # 预训练模型
@@ -107,7 +107,7 @@ class PerceptualLoss(nn.Module):
         else:
             raise ValueError("Only 'vgg19' and 'vgg16' are supported.")
 
-        self.feature_extractor = nn.Sequential(*list(vgg[:layer_index]))  # 提取前 layer_index 层
+        self.feature_extractor = nn.Sequential(*list(vgg[:layer_index])).to(self.device)  # 提取前 layer_index 层
         for param in self.feature_extractor.parameters():
             param.requires_grad = False  # 冻结权重，不参与训练
 
