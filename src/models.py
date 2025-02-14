@@ -115,5 +115,5 @@ class PerceptualLoss(nn.Module):
         sr_features = self.feature_extractor(sr_image)
         hr_features = self.feature_extractor(hr_image)
         # 计算混合损失
-        loss = nn.functional.mse_loss(sr_features, hr_features) + nn.functional.mse_loss(sr_image, hr_image)
+        loss = nn.functional.mse_loss(sr_features, hr_features) + nn.functional.l1_loss(sr_image, hr_image)
         return loss

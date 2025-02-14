@@ -24,7 +24,7 @@ def train_example(num_epochs, num_models):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     d_criterion = torch.nn.MSELoss()
-    g_criterion = torch.nn.MSELoss()
+    g_criterion = torch.nn.L1Loss()
     discriminator = Discriminator().to(device)
     model = [SRResNet().to(device) for i in range(num_models)]
     optimizer = [optim.Adam(generator.parameters(), lr=0.001) for generator in model]
@@ -126,7 +126,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, criterion, g_opt
     fake_preds = discriminator(sr_images)
 
     # Generator loss (fool the discriminator into thinking fake data is real)
-    g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
+    g_loss = F.mse_loss(fake_preds, torch.ones_like(fake_preds))
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
@@ -135,7 +135,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, criterion, g_opt
         g_loss = criterion(sr_images, pre_sr_imgs.detach())
 
     else:
-        g_loss = g_loss + criterion(sr_images * 5, hr_imgs * 5)
+        g_loss = g_loss + criterion(sr_images, hr_imgs)
 
     # Update generator
     g_optimizer.zero_grad()
