@@ -19,7 +19,6 @@ def train_example(num_epochs, num_models):
     print(f'Training with {num_models} generators competing!')
     # 确保结果保存目录存在
     os.makedirs(f"results{num_models}", exist_ok=True)
-    os.makedirs(f'figures{num_models}', exist_ok=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -70,7 +69,7 @@ def train_example(num_epochs, num_models):
         shuffle_lists_in_same_order(model, lr_schedulers, optimizer)
 
     # Save the generator model's state_dict
-    avg_losses[0] = 2 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
+    avg_losses[0] = 1 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
     for i in range(len(model)):
         torch.save(model[i].state_dict(), os.path.join(f'results{num_models}', f'generator_model_{i}.pth'))
     # Plotting the loss curve
@@ -82,8 +81,8 @@ def train_example(num_epochs, num_models):
     plt.legend()
     plt.grid(True)
 
-    # Save the plot as an image file in the 'figures' directory
-    plt.savefig(os.path.join(f'figures{num_models}', 'training_loss_curve.png'))
+    # Save the plot as an image file in the 'results' directory
+    plt.savefig(os.path.join(f'results{num_models}', 'training_loss_curve.png'))
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
