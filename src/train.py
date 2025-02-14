@@ -70,7 +70,7 @@ def train_example(num_epochs, num_models):
         shuffle_lists_in_same_order(model, lr_schedulers, optimizer, gen_losses)
 
     # Save the generator model's state_dict
-    avg_losses[0] = 1 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
+    #avg_losses[0] = 1 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
     for i in range(len(model)):
         torch.save(model[i].state_dict(), os.path.join(f'results{num_models}', f'generator_model_{i}.pth'))
     # Plotting the loss curve
