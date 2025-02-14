@@ -130,7 +130,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, criterion, g_opt
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
-    sigma = torch.normal(mean=g_loss, std=pre_loss ** 2)  # 生成 sigma
+    sigma = torch.normal(mean=g_loss, std=g_loss ** 2)  # 生成 sigma
     if sigma > pre_loss:
         g_loss = criterion(sr_images, pre_sr_imgs.detach())
 
