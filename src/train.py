@@ -198,5 +198,5 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
     # 如果直接运行 train.py，则调用训练示例
-    train_example(30, 1)
-    train_example(30, 3)
+    train_example(50, 1)
+    train_example(50, 3)
