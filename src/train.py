@@ -2,38 +2,48 @@ import os
 
 import torch
 import torch.optim as optim
+from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.models import SRResNet, Discriminator
 from src.transformers import normalize_img_size, downward_img_quality
-from src.utils import ImageDatasetWithTransforms
+from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order
 from PIL import Image
 import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-# 确保结果保存目录存在
-os.makedirs("results", exist_ok=True)
 
-
-def train_example():
+def train_example(num_epochs, num_models):
     """
     此函数仅为示例，展示如何构建训练循环。
     真实训练过程需要数据集、损失函数、数据加载器等模块。
     """
+    # 确保结果保存目录存在
+    os.makedirs(f"results{num_models}", exist_ok=True)
+    os.makedirs(f'figures{num_models}', exist_ok=True)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = [SRResNet().to(device) for i in range(1)]
+
+    criterion = torch.nn.MSELoss()
     discriminator = Discriminator().to(device)
-    num_epochs = 50
+    model = [SRResNet().to(device) for i in range(num_models)]
     optimizer = [optim.Adam(generator.parameters(), lr=0.001) for generator in model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=0.001)
-    criterion = torch.nn.MSELoss()
-    """lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer = optimizer,
-        T_max=num_epochs,
-
-    )"""
+    d_lr_scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer=d_optimizer,
+        step_size=5,
+        gamma=0.8
+    )
+    lr_schedulers = []
+    for i in range(len(model)):
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer=optimizer[i],
+            step_size=5,
+            gamma=0.8
+        )
+        lr_schedulers.append(scheduler)
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
@@ -43,13 +53,36 @@ def train_example():
     val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
     val_loader = DataLoader(val_data, batch_size=5, shuffle=True)
 
+    avg_losses = []
+
     for epoch in range(num_epochs):
-        train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, criterion, device, epoch,
-                        num_epochs)
-        #lr_scheduler.step()
+        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, criterion, device, epoch,
+                                   num_epochs)
+        avg_losses.append(avg_loss)
+
+        for scheduler in lr_schedulers:
+            scheduler.step()
+
+        d_lr_scheduler.step()
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        validate(model[-1], val_loader, device, epoch)
+        validate(model[-1], val_loader, device, epoch, num_models)
+
+        shuffle_lists_in_same_order(model, lr_schedulers, optimizer)
+
+    # Save the generator model's state_dict
+    torch.save(model[0].state_dict(), os.path.join(f'results{num_models}', 'generator_model.pth'))
+    # Plotting the loss curve
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, num_epochs + 1), avg_losses, marker='o', linestyle='-', color='b', label='Training Loss')
+    plt.title('Training Loss Curve')
+    plt.xlabel('Epoch')
+    plt.ylabel('Average Loss')
+    plt.legend()
+    plt.grid(True)
+
+    # Save the plot as an image file in the 'figures' directory
+    plt.savefig(os.path.join(f'figures{num_models}', 'training_loss_curve.png'))
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
@@ -131,7 +164,7 @@ def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d
     return d_loss.item()
 
 
-def validate(model, val_loader, device, epoch):
+def validate(model, val_loader, device, epoch, num_models):
     model.eval()
     with torch.no_grad():
         # 从验证集中获取一个batch
@@ -151,7 +184,7 @@ def validate(model, val_loader, device, epoch):
             comp_list.append(comp)
         # 制作成图片网格，每行一个样本
         comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=True)
-        save_path = os.path.join("results", f"epoch_{epoch}_comparison.png")
+        save_path = os.path.join(f"results{num_models}", f"epoch_{epoch}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
         print(f"Epoch {epoch}: Comparison image saved to {save_path}")
     return save_path
@@ -159,4 +192,6 @@ def validate(model, val_loader, device, epoch):
 
 if __name__ == "__main__":
     # 如果直接运行 train.py，则调用训练示例
-    train_example()
+    train_example(10, 1)
+    train_example(10, 2)
+    train_example(10, 3)
