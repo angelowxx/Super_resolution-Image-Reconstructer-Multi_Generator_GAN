@@ -34,20 +34,20 @@ def train_example(num_epochs, num_models):
     d_lr_scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer=d_optimizer,
         step_size=5,
-        gamma=0.8
+        gamma=0.6
     )
     lr_schedulers = []
     for i in range(len(model)):
         scheduler = torch.optim.lr_scheduler.StepLR(
             optimizer=optimizer[i],
             step_size=5,
-            gamma=0.8
+            gamma=0.6
         )
         lr_schedulers.append(scheduler)
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
-    train_loader = DataLoader(train_data, batch_size=8, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=16, shuffle=True)
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'val')
     val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
@@ -192,6 +192,5 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
     # 如果直接运行 train.py，则调用训练示例
-    train_example(10, 1)
-    train_example(10, 2)
-    train_example(10, 3)
+    train_example(30, 1)
+    train_example(30, 3)
