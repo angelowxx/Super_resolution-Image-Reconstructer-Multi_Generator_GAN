@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torchvision.models as models
 
 
 class ResidualBlock(nn.Module):
@@ -94,3 +95,25 @@ class Discriminator(nn.Module):
 
     def forward(self, x):
         return self.model(x)
+
+
+class PerceptualLoss(nn.Module):
+    def __init__(self, model_type='vgg19', layer_index=36):
+        super(PerceptualLoss, self).__init__()
+        if model_type == 'vgg19':
+            vgg = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features  # 预训练模型
+        elif model_type == 'vgg16':
+            vgg = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features  # 预训练模型
+        else:
+            raise ValueError("Only 'vgg19' and 'vgg16' are supported.")
+
+        self.feature_extractor = nn.Sequential(*list(vgg[:layer_index]))  # 提取前 layer_index 层
+        for param in self.feature_extractor.parameters():
+            param.requires_grad = False  # 冻结权重，不参与训练
+
+    def forward(self, sr_image, hr_image):
+        sr_features = self.feature_extractor(sr_image)
+        hr_features = self.feature_extractor(hr_image)
+        # 计算混合损失
+        loss = nn.functional.mse_loss(sr_features, hr_features) + nn.functional.mse_loss(sr_image, hr_image)
+        return loss
