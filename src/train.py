@@ -54,7 +54,7 @@ def train_example(num_epochs, num_models):
 
     for epoch in range(num_epochs):
         if epoch > -1:
-            g_criterion = PerceptualLoss(device)
+            g_criterion = PerceptualLoss(device=device)
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, d_criterion, g_criterion, device, epoch,
                                    num_epochs)
         avg_losses.append(avg_loss)
