@@ -29,17 +29,16 @@ def train_example(num_epochs, num_models):
     model = [SRResNet().to(device) for i in range(num_models)]
     optimizer = [optim.Adam(generator.parameters(), lr=0.001) for generator in model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=0.001)
-    d_lr_scheduler = torch.optim.lr_scheduler.StepLR(
+    scheduler = optim.lr_scheduler.CosineAnnealingLR
+    d_lr_scheduler = scheduler(
         optimizer=d_optimizer,
-        step_size=5,
-        gamma=0.6
+        T_max=num_epochs,
     )
     lr_schedulers = []
     for i in range(len(model)):
-        scheduler = torch.optim.lr_scheduler.StepLR(
+        scheduler = scheduler(
             optimizer=optimizer[i],
-            step_size=5,
-            gamma=0.6
+            T_max=num_epochs,
         )
         lr_schedulers.append(scheduler)
 
@@ -199,5 +198,5 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
     # 如果直接运行 train.py，则调用训练示例
-    train_example(30, 1)
-    train_example(30, 3)
+    train_example(20, 1)
+    train_example(20, 3)
