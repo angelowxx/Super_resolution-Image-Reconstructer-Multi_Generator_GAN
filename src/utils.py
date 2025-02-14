@@ -1,4 +1,5 @@
 import os
+import random
 
 import torch
 import torchvision.transforms as transforms
@@ -59,3 +60,15 @@ def load_image(image_path):
     image = Image.open(image_path).convert("RGB")
     transform = get_transform()
     return transform(image).unsqueeze(0)  # 增加 batch 维度
+
+
+def shuffle_lists_in_same_order(*lists):
+    # Combine the lists into a list of tuples
+    combined = list(zip(*lists))
+
+    # Shuffle the combined list
+    random.shuffle(combined)
+
+    # Unpack the shuffled list back into individual lists
+    return [list(t) for t in zip(*combined)]
+
