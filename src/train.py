@@ -50,12 +50,13 @@ def train_example(num_epochs, num_models):
     val_loader = DataLoader(val_data, batch_size=5, shuffle=True)
 
     avg_losses = []
+    gen_losses = [2 for i in range(len(model))]
 
     for epoch in range(num_epochs):
         #if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
-        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, d_criterion, g_criterion, device, epoch,
-                                   num_epochs)
+        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, d_criterion, g_criterion,
+                                   device, epoch, num_epochs, gen_losses)
         avg_losses.append(avg_loss)
 
         for scheduler in lr_schedulers:
@@ -66,7 +67,7 @@ def train_example(num_epochs, num_models):
         # 验证：每个epoch结束后随机取一个batch验证效果
         validate(model[-1], val_loader, device, epoch, num_models)
 
-        shuffle_lists_in_same_order(model, lr_schedulers, optimizer)
+        shuffle_lists_in_same_order(model, lr_schedulers, optimizer, gen_losses)
 
     # Save the generator model's state_dict
     avg_losses[0] = 1 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
@@ -86,7 +87,7 @@ def train_example(num_epochs, num_models):
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
-                    , d_criterion, g_criterion, device, epoch, num_epochs):
+                    , d_criterion, g_criterion, device, epoch, num_epochs, gen_losses):
     total_loss = 0
     t = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{num_epochs}] Training")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
@@ -101,11 +102,12 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             generator = model[i]
             optimizer = g_optimizer[i]
             g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                              g_criterion, optimizer, pre_loss, pre_res, epoch, num_epochs)
+                                              g_criterion, optimizer, pre_loss, pre_res)
             pre_loss = g_loss
             pre_res = sr_imgs
             if i == 0:
                 first_loss = g_loss
+            gen_losses[i] = g_loss
 
         total_loss += first_loss
         t.set_postfix(g_loss=first_loss, d_loss=d_loss)
@@ -116,7 +118,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                    criterion, g_optimizer, pre_loss, pre_sr_imgs, epoch, nums_epoch):
+                    criterion, g_optimizer, pre_loss, pre_sr_imgs):
     # --- Train Generator ---
     generator.train()
 
