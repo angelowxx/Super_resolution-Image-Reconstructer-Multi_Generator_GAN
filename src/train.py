@@ -24,7 +24,8 @@ def train_example(num_epochs, num_models):
 
     starting_GAN_loss = 5
 
-    criterion = torch.nn.L1Loss()
+    g_criterion = torch.nn.L1Loss()
+    d_criterion = torch.nn.BCELoss()
     discriminator = Discriminator().to(device)
     model = [SRResNet().to(device) for i in range(num_models)]
     optimizer = [optim.Adam(generator.parameters(), lr=2e-4) for generator in model]
@@ -56,8 +57,8 @@ def train_example(num_epochs, num_models):
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
-        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, criterion,
-                                   device, epoch, num_epochs, gen_losses, starting_GAN_loss)
+        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, g_criterion,
+                                   d_criterion, device, epoch, num_epochs, gen_losses, starting_GAN_loss)
         avg_losses.append(avg_loss)
 
         for scheduler in lr_schedulers:
@@ -90,7 +91,7 @@ def train_example(num_epochs, num_models):
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
-                    , criterion, device, epoch, num_epochs, gen_losses, starting_GAN_loss):
+                    , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses, starting_GAN_loss):
     total_loss = 0
 
     t = tqdm(train_loader, desc=f"Epoch [{epoch + 1}/{num_epochs}] Training")
@@ -107,7 +108,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             optimizer = g_optimizer[i]
 
             g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                                      criterion, optimizer, pre_loss, d_optimizer)
+                                                      g_criterion, d_criterion, optimizer, pre_loss, d_optimizer)
             if g_loss < pre_loss:
                 pre_loss = g_loss
 
@@ -126,16 +127,16 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                    criterion, g_optimizer, pre_loss, d_optimizer):
+                    g_criterion, d_criterion, g_optimizer, pre_loss, d_optimizer):
 
-    d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer)
+    d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
 
     # --- Train Generator ---
     generator.train()
 
     sr_images = generator(lr_imgs)
 
-    com_loss = criterion(sr_images, hr_imgs)
+    com_loss = g_criterion(sr_images, hr_imgs)
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
@@ -143,10 +144,9 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sigma = torch.normal(mean=com_loss, std=theta ** 2)  # 生成 sigma
     if sigma < pre_loss:
 
-        with torch.no_grad():
-            fake_preds = discriminator(sr_images)
+        fake_preds = discriminator(sr_images)
 
-        g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
+        g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
 
     else:
         g_loss = com_loss
@@ -161,7 +161,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     return com_loss.item(), d_loss, sr_images
 
 
-def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer):
+def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer):
     # --- Train Discriminator ---
     discriminator.train()
 
@@ -178,8 +178,8 @@ def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d
     fake_labels = torch.zeros_like(fake_preds)
 
     # Compute losses separately
-    real_loss = criterion(real_preds, real_labels)
-    fake_loss = criterion(fake_preds, fake_labels)
+    real_loss = d_criterion(real_preds, real_labels)
+    fake_loss = d_criterion(fake_preds, fake_labels)
 
     # Total discriminator loss
     d_loss = (real_loss + fake_loss) / 2  # 平均损失
