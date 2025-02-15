@@ -67,7 +67,7 @@ def shuffle_lists_in_same_order(*lists):
     combined = list(zip(*lists))
 
     # Sort the combined list based on the last element in each tuple
-    combined.sort(key=lambda x: x[-1])
+    combined.sort(key=lambda x: x[-1], reverse=True)
 
     # Unpack the sorted list back into individual lists
     return [list(t) for t in zip(*combined)]
