@@ -134,7 +134,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     d_optimizer, d_loss, pre_res, model_idx):
 
     # --- Train Generator ---
-    train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
+    d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
     generator.train()
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
