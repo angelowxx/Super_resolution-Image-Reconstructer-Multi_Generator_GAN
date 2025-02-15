@@ -26,8 +26,8 @@ def train_example(num_epochs, num_models):
     g_criterion = torch.nn.L1Loss()
     discriminator = Discriminator().to(device)
     model = [SRResNet().to(device) for i in range(num_models)]
-    optimizer = [optim.Adam(generator.parameters(), lr=0.001) for generator in model]
-    d_optimizer = optim.Adam(discriminator.parameters(), lr=0.001)
+    optimizer = [optim.Adam(generator.parameters(), lr=1e-4) for generator in model]
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=1e-4)
     scheduler = optim.lr_scheduler.CosineAnnealingLR
     d_lr_scheduler = scheduler(
         optimizer=d_optimizer,
@@ -216,6 +216,6 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
 
-    train_example(30, 3)
+    train_example(40, 3)
     train_example(30, 1)
     train_example(30, 5)
