@@ -143,7 +143,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     if model_idx < 1:
         g_loss = g_criterion(sr_images, hr_imgs)
 
-    elif model_idx > 3:
+    elif model_idx > 2:
         with torch.no_grad():
             better_preds = discriminator(pre_res)
         g_loss = torch.mean(torch.relu(better_preds-fake_preds))
@@ -220,4 +220,4 @@ def validate(model, val_loader, device, epoch, num_models):
 
 
 if __name__ == "__main__":
-    train_example(100, 3)
+    train_example(100, 4)
