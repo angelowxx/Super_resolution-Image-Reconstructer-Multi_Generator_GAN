@@ -58,7 +58,7 @@ def train_example(num_epochs, num_models):
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, g_criterion,
-                                   d_criterion, device, epoch, num_epochs, gen_losses, starting_GAN_loss)
+                                   d_criterion, device, epoch, num_epochs, gen_losses, starting_GAN_loss,)
         avg_losses.append(avg_loss)
 
         for scheduler in lr_schedulers:
@@ -102,6 +102,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
         g_loss = 0
         pre_loss = starting_GAN_loss  # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
+        pre_res = hr_imgs
 
         for i in range(len(model)):
             generator = model[i]
@@ -109,9 +110,10 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
             g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                                       g_criterion, d_criterion, optimizer, pre_loss,
-                                                      d_optimizer, d_loss)
+                                                      d_optimizer, d_loss, pre_res)
             if g_loss < pre_loss:
                 pre_loss = g_loss
+                pre_res = hr_imgs
 
             gen_losses[i] += g_loss
 
@@ -129,7 +131,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer, pre_loss,
-                    d_optimizer, d_loss):
+                    d_optimizer, d_loss, pre_res):
 
     # --- Train Generator ---
     generator.train()
@@ -151,7 +153,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
         g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
 
     else:
-        g_loss = com_loss
+        g_loss = g_criterion(sr_images, pre_res)
 
     # Update generator
     g_optimizer.zero_grad()
