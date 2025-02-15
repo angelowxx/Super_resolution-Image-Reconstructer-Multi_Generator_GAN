@@ -93,6 +93,7 @@ def train_example(num_epochs, num_models):
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
                     , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses, starting_GAN_loss):
     total_loss = 0
+    d_loss = 1
 
     t = tqdm(train_loader, desc=f"Epoch [{epoch + 1}/{num_epochs}] Training")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
@@ -100,7 +101,6 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         lr_imgs = lr_imgs.to(device)
 
         g_loss = 0
-        d_loss = 1
         pre_loss = starting_GAN_loss  # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
 
         for i in range(len(model)):
@@ -108,7 +108,8 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             optimizer = g_optimizer[i]
 
             g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                                      g_criterion, d_criterion, optimizer, pre_loss, d_optimizer)
+                                                      g_criterion, d_criterion, optimizer, pre_loss,
+                                                      d_optimizer, d_loss)
             if g_loss < pre_loss:
                 pre_loss = g_loss
 
@@ -127,9 +128,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                    g_criterion, d_criterion, g_optimizer, pre_loss, d_optimizer):
-
-    d_loss = 1
+                    g_criterion, d_criterion, g_optimizer, pre_loss, d_optimizer, d_loss):
 
     # --- Train Generator ---
     generator.train()
