@@ -111,7 +111,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             gen_losses[i] += g_loss
         # 让表现最差的模型向discriminator学习，前期所有模型表现都较差时可以获得discriminator的信息
         train_generator(model[0], discriminator, lr_imgs, hr_imgs,
-                        g_criterion, g_optimizer[0], pre_loss, pre_res)
+                        g_criterion, g_optimizer[0], 1, pre_res)
         # 让表现最好的模型向原图学习，后期所有模型表现都较好时可以保证和原图的相似度不降低
         train_generator(model[-1], discriminator, lr_imgs, hr_imgs,
                         g_criterion, g_optimizer[-1], 0, hr_imgs)
