@@ -34,7 +34,7 @@ class SRResNet(nn.Module):
         super(SRResNet, self).__init__()
         # 第一层卷积 + 激活
         self.conv1 = nn.Conv2d(in_channels, num_features, kernel_size=9, padding=4)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.LeakyReLU(0.2, inplace=True),
 
         # 残差块序列
         residual_blocks = [ResidualBlock(num_features) for _ in range(num_residuals)]
