@@ -127,7 +127,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     criterion, g_optimizer, pre_loss, d_optimizer):
-    d_loss = 0.5
+
     d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer)
 
     # --- Train Generator ---
@@ -143,7 +143,8 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sigma = torch.normal(mean=com_loss, std=theta ** 2)  # 生成 sigma
     if sigma < pre_loss:
 
-        fake_preds = discriminator(sr_images)
+        with torch.no_grad():
+            fake_preds = discriminator(sr_images)
 
         g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
 
