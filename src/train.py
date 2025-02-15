@@ -22,7 +22,7 @@ def train_example(num_epochs, num_models):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    starting_GAN_loss = 0.02
+    starting_GAN_loss = 1
 
     g_criterion = torch.nn.L1Loss()
     d_criterion = torch.nn.BCELoss()
@@ -220,4 +220,4 @@ def validate(model, val_loader, device, epoch, num_models):
 
 
 if __name__ == "__main__":
-    train_example(25, 3)
+    train_example(20, 3)
