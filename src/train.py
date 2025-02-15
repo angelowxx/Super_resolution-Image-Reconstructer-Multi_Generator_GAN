@@ -126,18 +126,19 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sr_images = generator(lr_imgs)
 
     com_loss = criterion(sr_images, hr_imgs)
+    g_loss = com_loss
 
     # Discriminator prediction on fake data
     fake_preds = discriminator(sr_images)
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
-    sigma = torch.normal(mean=com_loss, std=com_loss.item() ** 2)  # 生成 sigma
+    sigma = torch.normal(mean=g_loss, std=g_loss.item() ** 2)  # 生成 sigma
     if sigma > pre_loss:
-        g_loss = com_loss + criterion(sr_images, pre_sr_imgs.detach())
+        g_loss = g_loss + criterion(sr_images, pre_sr_imgs.detach())
 
     else:
-        g_loss = com_loss + criterion(fake_preds, torch.ones_like(fake_preds))
+        g_loss = g_loss + criterion(fake_preds, torch.ones_like(fake_preds))
 
     # Update generator
     g_optimizer.zero_grad()
