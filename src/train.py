@@ -95,7 +95,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         lr_imgs = lr_imgs.to(device)
 
         d_loss = train_discriminator(model[0], discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
-        pre_loss = 100
+        pre_loss = 0.2
         pre_res = hr_imgs
         first_loss = 0
         for i in range(len(model)):
@@ -130,20 +130,19 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sr_images = generator(lr_imgs)
 
     com_loss = criterion(sr_images, hr_imgs)
-    g_loss = com_loss
 
     # Discriminator prediction on fake data
     fake_preds = discriminator(sr_images)
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
-    theta = abs(g_loss.item()-pre_loss)
-    sigma = torch.normal(mean=g_loss, std=theta ** 2)  # 生成 sigma
-    if sigma > pre_loss:
-        g_loss = g_loss + criterion(sr_images, pre_sr_imgs.detach())
+    theta = abs(com_loss.item()-pre_loss)
+    sigma = torch.normal(mean=com_loss, std=theta ** 2)  # 生成 sigma
+    if sigma < pre_loss:
+        g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
 
     else:
-        g_loss = g_loss + criterion(fake_preds, torch.ones_like(fake_preds))
+        g_loss = com_loss
 
     # Update generator
     g_optimizer.zero_grad()
