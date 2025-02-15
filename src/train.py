@@ -130,7 +130,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sr_images = generator(lr_imgs)
 
     com_loss = criterion(sr_images, hr_imgs)
-    d_loss = torch.tensor(0.5)
+    d_loss = 0.5
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
@@ -152,7 +152,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
     generator.eval()
 
-    return com_loss.item(), d_loss.item(), sr_images
+    return com_loss.item(), d_loss, sr_images
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer):
