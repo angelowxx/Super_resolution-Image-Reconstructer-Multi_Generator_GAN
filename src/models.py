@@ -101,7 +101,12 @@ class Discriminator(nn.Module):
         # 全连接层
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(num_filters * 4 * 4, 1),
+
+            nn.Linear(num_filters * 4 * 4, num_filters),
+            nn.BatchNorm1d(num_filters),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Linear(num_filters, 1),
             nn.Sigmoid()
         )
 
