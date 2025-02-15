@@ -26,7 +26,7 @@ def train_example(num_epochs, num_models):
     g_criterion = torch.nn.L1Loss()
     discriminator = Discriminator().to(device)
     model = [SRResNet().to(device) for i in range(num_models)]
-    optimizer = [optim.Adam(generator.parameters(), lr=1e-4) for generator in model]
+    optimizer = [optim.Adam(generator.parameters(), lr=2e-4) for generator in model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=1e-4)
     scheduler = optim.lr_scheduler.CosineAnnealingLR
     d_lr_scheduler = scheduler(
@@ -137,7 +137,8 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
-    sigma = torch.normal(mean=g_loss, std=g_loss.item() ** 2)  # 生成 sigma
+    theta = abs(g_loss.item()-pre_loss)
+    sigma = torch.normal(mean=g_loss, std=theta ** 2)  # 生成 sigma
     if sigma > pre_loss:
         g_loss = g_loss + criterion(sr_images, pre_sr_imgs.detach())
 
@@ -216,5 +217,5 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
 
-    train_example(60, 3)
-    train_example(60, 1)
+    train_example(50, 3)
+    train_example(50, 1)
