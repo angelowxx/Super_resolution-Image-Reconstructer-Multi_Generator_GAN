@@ -27,7 +27,7 @@ def train_example(num_epochs, num_models):
     discriminator = Discriminator().to(device)
     model = [SRResNet().to(device) for i in range(num_models)]
     optimizer = [optim.Adam(generator.parameters(), lr=0.001) for generator in model]
-    d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0001)
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=0.001)
     scheduler = optim.lr_scheduler.CosineAnnealingLR
     d_lr_scheduler = scheduler(
         optimizer=d_optimizer,
@@ -152,15 +152,25 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer):
     # --- Train Discriminator ---
     discriminator.train()
-    # Generate fake data
-    sr_images = generator(lr_imgs)
 
-    # Discriminator predictions
+    # Generate fake images
+    with torch.no_grad():  # 不让生成器回传梯度
+        sr_images = generator(lr_imgs)
+
+    # Get discriminator predictions
     real_preds = discriminator(hr_imgs)
-    fake_preds = discriminator(sr_images)
+    fake_preds = discriminator(sr_images.detach())  
 
-    # Discriminator loss
-    d_loss = criterion(real_preds, fake_preds)
+    # Create real and fake labels
+    real_labels = torch.ones_like(real_preds)
+    fake_labels = torch.zeros_like(fake_preds)
+
+    # Compute losses separately
+    real_loss = criterion(real_preds, real_labels)
+    fake_loss = criterion(fake_preds, fake_labels)
+
+    # Total discriminator loss
+    d_loss = (real_loss + fake_loss) / 2  # 平均损失
 
     # Update discriminator
     d_optimizer.zero_grad()
@@ -170,6 +180,7 @@ def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d
     discriminator.eval()
 
     return d_loss.item()
+
 
 
 def validate(model, val_loader, device, epoch, num_models):
@@ -200,6 +211,6 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
 
-    train_example(25, 1)
-    train_example(25, 3)
-    train_example(25, 5)
+    train_example(20, 1)
+    train_example(20, 3)
+    train_example(20, 5)
