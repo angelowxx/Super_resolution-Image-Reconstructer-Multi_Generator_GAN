@@ -95,7 +95,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         lr_imgs = lr_imgs.to(device)
 
         d_loss = train_discriminator(model[0], discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
-        pre_loss = 0.2
+        pre_loss = 0.1
         pre_res = hr_imgs
         first_loss = 0
         for i in range(len(model)):
