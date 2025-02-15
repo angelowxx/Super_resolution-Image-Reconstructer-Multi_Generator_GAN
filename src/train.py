@@ -50,11 +50,11 @@ def train_example(num_epochs, num_models):
     val_loader = DataLoader(val_data, batch_size=16, shuffle=True)
 
     avg_losses = []
-    gen_losses = [1 for i in range(len(model))]
 
     for epoch in range(num_epochs):
         #if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
+        gen_losses = [0 for i in range(len(model))]
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, d_criterion, g_criterion,
                                    device, epoch, num_epochs, gen_losses)
         avg_losses.append(avg_loss)
@@ -108,12 +108,16 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
                 pre_loss = g_loss
             if i == 0:
                 first_loss = g_loss
-            gen_losses[i] = g_loss
+            gen_losses[i] += g_loss
 
         total_loss += first_loss
         t.set_postfix(g_loss=first_loss, d_loss=d_loss)
 
     avg_loss = total_loss / len(train_loader)
+
+    for i in range(len(gen_losses)):
+        gen_losses[i] /= len(train_loader)  # 直接修改原列表
+
     print(f"Epoch [{epoch+1}/{num_epochs}] Training Loss: {avg_loss:.6f}")
     return avg_loss
 
@@ -212,5 +216,4 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
 
-    train_example(20, 1)
-    train_example(20, 3)
+    train_example(30, 3)

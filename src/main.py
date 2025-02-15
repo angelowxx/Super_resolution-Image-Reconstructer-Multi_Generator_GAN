@@ -25,4 +25,4 @@ def main():
 
 
 if __name__ == "__main__":
-    train_example(20, 1)
+    train_example(20, 3)
