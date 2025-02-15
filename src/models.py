@@ -105,11 +105,10 @@ class Discriminator(nn.Module):
         )
 
     def forward(self, x):
-        self.model(x)
+        x = self.model(x)
         x = self.global_pool(x)  # 变成固定大小
 
         x = x.view(x.size(0), -1)  # 先展平
-        print("Flattened shape:", x.shape)  # 打印形状
 
         x = self.classifier(x)  # 通过全连接层
         return x
