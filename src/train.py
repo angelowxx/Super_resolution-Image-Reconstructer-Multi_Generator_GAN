@@ -110,8 +110,11 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
                 pre_loss = g_loss
             gen_losses[i] += g_loss
         # 让表现最差的模型也有机会向discriminator学习
-        g_loss, sr_imgs = train_generator(model[0], discriminator, lr_imgs, hr_imgs,
-                                          g_criterion, g_optimizer[0], pre_loss, pre_res)
+        train_generator(model[0], discriminator, lr_imgs, hr_imgs,
+                        g_criterion, g_optimizer[0], pre_loss, pre_res)
+        # 让表现最好的模型向原图学习
+        train_generator(model[-1], discriminator, lr_imgs, hr_imgs,
+                        g_criterion, g_optimizer[-1], 0, hr_imgs)
 
         total_loss += g_loss
         t.set_postfix(g_loss=g_loss, d_loss=d_loss)
@@ -188,7 +191,6 @@ def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d
     discriminator.eval()
 
     return d_loss.item()
-
 
 
 def validate(model, val_loader, device, epoch, num_models):
