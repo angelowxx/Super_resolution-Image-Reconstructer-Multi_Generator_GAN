@@ -27,7 +27,7 @@ def train_example(num_epochs, num_models):
     discriminator = Discriminator().to(device)
     model = [SRResNet().to(device) for i in range(num_models)]
     optimizer = [optim.Adam(generator.parameters(), lr=0.001) for generator in model]
-    d_optimizer = optim.Adam(discriminator.parameters(), lr=0.0001)
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=0.001)
     scheduler = optim.lr_scheduler.CosineAnnealingLR
     d_lr_scheduler = scheduler(
         optimizer=d_optimizer,
