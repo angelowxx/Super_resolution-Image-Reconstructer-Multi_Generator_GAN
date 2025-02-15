@@ -139,7 +139,9 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     if sigma < pre_loss:
         d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer)
 
-        fake_preds = discriminator(sr_images)
+        sr_images = generator(lr_imgs)
+        with torch.no_grad():
+            fake_preds = discriminator(sr_images)
 
         g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
 
