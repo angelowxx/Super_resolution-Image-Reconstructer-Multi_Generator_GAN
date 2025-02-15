@@ -143,7 +143,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     if model_idx < 1:
         g_loss = g_criterion(sr_images, hr_imgs)
 
-    elif model_idx > 2:
+    elif model_idx > 3:
         with torch.no_grad():
             better_preds = discriminator(pre_res)
         g_loss = torch.mean(torch.relu(better_preds-fake_preds))
