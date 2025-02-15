@@ -106,8 +106,8 @@ class Discriminator(nn.Module):
             nn.BatchNorm1d(num_filters),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Linear(num_filters, 1),
-            nn.Sigmoid()
+            nn.Linear(num_filters, 2),
+            nn.Softmax(1)
         )
 
     def forward(self, x):
