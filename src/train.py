@@ -131,37 +131,31 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer, pre_loss,
-                    d_optimizer, d_loss, pre_res):
+                    d_optimizer, d_loss, pre_res, batch_idx):
 
     # --- Train Generator ---
+    train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
     generator.train()
-
     sr_images = generator(lr_imgs)
+    fake_preds = discriminator(sr_images)
 
-    com_loss = g_criterion(sr_images, hr_imgs)
-
-    # 当前loss比pre_loss大时，当前generator向前一个学习
-    # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
-    sigma = abs(com_loss.item() - pre_loss) * 1.3  # 大约扩散0.22的概率到pre_loss的另一边
-    theta = torch.normal(mean=com_loss, std=sigma ** 2)  # 生成 sigma
-    if theta < pre_loss:
-        d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
-
-        fake_preds = discriminator(sr_images)
-
-        g_loss = com_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
+    if batch_idx == 0:
+        g_loss = g_criterion(sr_images, hr_imgs)
 
     else:
-        g_loss = g_criterion(sr_images, pre_res)
+        better_preds = discriminator(pre_res)
+        g_loss = torch.mean(torch.relu(better_preds-fake_preds))
 
     # Update generator
     g_optimizer.zero_grad()
     g_loss.backward()
     g_optimizer.step()
 
+    g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
+
     generator.eval()
 
-    return com_loss.item(), d_loss, sr_images
+    return g_loss.item(), d_loss, sr_images
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer):
