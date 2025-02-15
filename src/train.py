@@ -96,7 +96,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         lr_imgs = lr_imgs.to(device)
 
         d_loss = train_discriminator(model[0], discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
-        pre_loss = 0.05
+        pre_loss = 0.05    # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
         pre_res = hr_imgs
         g_loss = 0
         for i in range(len(model)):
