@@ -141,6 +141,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
         # Discriminator prediction on fake data
         with torch.no_grad():
             fake_preds = discriminator(sr_images)
+
         g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
 
     else:
