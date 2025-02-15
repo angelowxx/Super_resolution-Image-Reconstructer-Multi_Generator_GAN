@@ -51,7 +51,7 @@ def train_example(num_epochs, num_models):
     avg_losses = []
 
     for epoch in range(num_epochs):
-        #if epoch > -1:
+        # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, criterion,
@@ -64,14 +64,14 @@ def train_example(num_epochs, num_models):
         d_lr_scheduler.step()
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        if (epoch+1) % 5 == 0:
+        if (epoch + 1) % 5 == 0:
             validate(model[-1], train_loader, device, epoch, num_models)
 
         # 将模型按照对比损失，从大到校排列
         shuffle_lists_in_same_order(model, lr_schedulers, optimizer, gen_losses)
 
     # Save the generator model's state_dict
-    #avg_losses[0] = 1 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
+    # avg_losses[0] = 1 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
     for i in range(len(model)):
         torch.save(model[i].state_dict(), os.path.join(f'results{num_models}', f'generator_model_{i}.pth'))
     # Plotting the loss curve
@@ -90,34 +90,35 @@ def train_example(num_epochs, num_models):
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
                     , criterion, device, epoch, num_epochs, gen_losses):
     total_loss = 0
-    t = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{num_epochs}] Training")
+    t = tqdm(train_loader, desc=f"Epoch [{epoch + 1}/{num_epochs}] Training")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        pre_loss = 0.05    # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
+        pre_loss = 0.05  # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
         g_loss = 0
+        d_loss = 1
 
         for i in range(len(model)):
             generator = model[i]
             optimizer = g_optimizer[i]
 
-            g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                              criterion, optimizer, pre_loss, d_optimizer)
+            g_loss, sr_imgs, d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs,
+                                                      criterion, optimizer, pre_loss, d_optimizer)
             if g_loss < pre_loss:
                 pre_loss = g_loss
 
             gen_losses[i] += g_loss
 
         total_loss += g_loss
-        t.set_postfix(g=g_loss)
+        t.set_postfix(g=g_loss, d=d_loss)
 
     avg_loss = total_loss / len(train_loader)
 
     for i in range(len(gen_losses)):
         gen_losses[i] /= len(train_loader)  # 直接修改原列表
 
-    print(f"Epoch [{epoch+1}/{num_epochs}] Training Loss: {avg_loss:.6f}")
+    print(f"Epoch [{epoch + 1}/{num_epochs}] Training Loss: {avg_loss:.6f}")
     return avg_loss
 
 
@@ -129,13 +130,14 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sr_images = generator(lr_imgs)
 
     com_loss = criterion(sr_images, hr_imgs)
+    d_loss = 1
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
-    theta = abs(com_loss.item()-pre_loss)
+    theta = abs(com_loss.item() - pre_loss)
     sigma = torch.normal(mean=com_loss, std=theta ** 2)  # 生成 sigma
     if sigma < pre_loss:
-        train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer)
+        d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer).item()
         # Discriminator prediction on fake data
         fake_preds = discriminator(sr_images)
         g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
@@ -150,7 +152,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
     generator.eval()
 
-    return com_loss.item(), sr_images
+    return com_loss.item(), d_loss, sr_images
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer):
@@ -163,7 +165,7 @@ def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d
 
     # Get discriminator predictions
     real_preds = discriminator(hr_imgs)
-    fake_preds = discriminator(sr_images.detach())  
+    fake_preds = discriminator(sr_images.detach())
 
     # Create real and fake labels
     real_labels = torch.ones_like(real_preds)
@@ -206,12 +208,11 @@ def validate(model, val_loader, device, epoch, num_models):
             comp_list.append(comp)
         # 制作成图片网格，每行一个样本
         comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=False)
-        save_path = os.path.join(f"results{num_models}", f"epoch_{epoch+1}_comparison.png")
+        save_path = os.path.join(f"results{num_models}", f"epoch_{epoch + 1}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
-        print(f"Epoch {epoch+1}: Comparison image saved to {save_path}")
+        print(f"Epoch {epoch + 1}: Comparison image saved to {save_path}")
     return save_path
 
 
 if __name__ == "__main__":
-
     train_example(100, 3)
