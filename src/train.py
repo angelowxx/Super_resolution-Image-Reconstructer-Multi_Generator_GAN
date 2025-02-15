@@ -97,21 +97,23 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         d_loss = train_discriminator(model[0], discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
         pre_loss = 0.1
         pre_res = hr_imgs
-        first_loss = 0
+        g_loss = 0
         for i in range(len(model)):
             generator = model[i]
             optimizer = g_optimizer[i]
+
             g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                               g_criterion, optimizer, pre_loss, pre_res)
             if g_loss < pre_loss:
                 pre_res = sr_imgs
                 pre_loss = g_loss
-            if i == 0:
-                first_loss = g_loss
             gen_losses[i] += g_loss
+        # 让表现最差的模型也有机会向discriminator学习
+        g_loss, sr_imgs = train_generator(model[0], discriminator, lr_imgs, hr_imgs,
+                                          g_criterion, g_optimizer[0], pre_loss, pre_res)
 
-        total_loss += first_loss
-        t.set_postfix(g_loss=first_loss, d_loss=d_loss)
+        total_loss += g_loss
+        t.set_postfix(g_loss=g_loss, d_loss=d_loss)
 
     avg_loss = total_loss / len(train_loader)
 
