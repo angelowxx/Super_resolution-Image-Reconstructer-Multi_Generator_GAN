@@ -58,6 +58,7 @@ def train_example(num_epochs, num_models):
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, d_criterion, g_criterion,
                                    device, epoch, num_epochs, gen_losses)
         avg_losses.append(avg_loss)
+        print(gen_losses[0])
 
         for scheduler in lr_schedulers:
             scheduler.step()
