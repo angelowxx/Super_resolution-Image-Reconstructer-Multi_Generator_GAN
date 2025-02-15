@@ -170,7 +170,7 @@ def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion,
 
     # Get discriminator predictions
     real_preds = discriminator(hr_imgs)
-    fake_preds = discriminator(sr_images.detach())
+    fake_preds = discriminator(sr_images)
 
     # Create real and fake labels
     real_labels = torch.ones_like(real_preds)
