@@ -66,12 +66,12 @@ def train_example(num_epochs, num_models):
 
         d_lr_scheduler.step()
 
+        # 将模型按照对比损失，从小到大排列
+        shuffle_lists_in_same_order(model, lr_schedulers, optimizer, gen_losses)
+
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0:
-            validate(model[-1], train_loader, device, epoch, num_models)
-
-        # 将模型按照对比损失，从大到校排列
-        shuffle_lists_in_same_order(model, lr_schedulers, optimizer, gen_losses)
+            validate(model[0], train_loader, device, epoch, num_models)
 
     # Save the generator model's state_dict
     # avg_losses[0] = 1 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
