@@ -138,25 +138,26 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     generator.train()
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
+    g_d_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
 
-    if model_idx == 0:
+    if model_idx < 2:
         g_loss = g_criterion(sr_images, hr_imgs)
 
-    else:
+    elif model_idx > 2:
         with torch.no_grad():
             better_preds = discriminator(pre_res)
         g_loss = torch.mean(torch.relu(better_preds-fake_preds))
+    else:
+        g_loss = g_d_loss
 
     # Update generator
     g_optimizer.zero_grad()
     g_loss.backward()
     g_optimizer.step()
 
-    g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
-
     generator.eval()
 
-    return g_loss.item(), d_loss, sr_images
+    return g_d_loss.item(), d_loss, sr_images
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer):
