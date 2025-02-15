@@ -149,7 +149,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
         fake_preds = discriminator(sr_images)
 
-        g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
+        g_loss = com_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
 
     else:
         g_loss = g_criterion(sr_images, pre_res)
