@@ -110,7 +110,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
             g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                                       g_criterion, d_criterion, optimizer, pre_loss,
-                                                      d_optimizer, d_loss, pre_res)
+                                                      d_optimizer, d_loss, pre_res, i)
             if g_loss < pre_loss:
                 pre_loss = g_loss
                 pre_res = hr_imgs
@@ -131,7 +131,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer, pre_loss,
-                    d_optimizer, d_loss, pre_res, batch_idx):
+                    d_optimizer, d_loss, pre_res, model_idx):
 
     # --- Train Generator ---
     train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
@@ -139,7 +139,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
 
-    if batch_idx == 0:
+    if model_idx == 0:
         g_loss = g_criterion(sr_images, hr_imgs)
 
     else:
