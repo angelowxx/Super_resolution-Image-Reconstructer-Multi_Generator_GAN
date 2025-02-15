@@ -67,6 +67,7 @@ def train_example(num_epochs, num_models):
         # 验证：每个epoch结束后随机取一个batch验证效果
         validate(model[-1], val_loader, device, epoch, num_models)
 
+        # 将模型按照对比损失，从大到校排列
         shuffle_lists_in_same_order(model, lr_schedulers, optimizer, gen_losses)
 
     # Save the generator model's state_dict
@@ -95,7 +96,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         lr_imgs = lr_imgs.to(device)
 
         d_loss = train_discriminator(model[0], discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
-        pre_loss = 0.1
+        pre_loss = 0.05
         pre_res = hr_imgs
         g_loss = 0
         for i in range(len(model)):
