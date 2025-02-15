@@ -120,7 +120,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         #                 g_criterion, g_optimizer[-1], 0, hr_imgs)
 
         total_loss += g_loss
-        t.set_postfix(g_loss=g_loss, d_loss=d_loss)
+        t.set_postfix(g=g_loss, d=d_loss)
 
     avg_loss = total_loss / len(train_loader)
 
