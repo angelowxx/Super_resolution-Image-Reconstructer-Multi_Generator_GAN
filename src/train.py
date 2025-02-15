@@ -109,7 +109,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
             g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                                       g_criterion, d_criterion, optimizer, pre_loss,
-                                                      d_optimizer, d_loss)
+                                                      d_optimizer, d_loss, starting_GAN_loss)
             if g_loss < pre_loss:
                 pre_loss = g_loss
 
@@ -128,7 +128,8 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                    g_criterion, d_criterion, g_optimizer, pre_loss, d_optimizer, d_loss):
+                    g_criterion, d_criterion, g_optimizer, pre_loss,
+                    d_optimizer, d_loss, starting_GAN_loss):
 
     # --- Train Generator ---
     generator.train()
@@ -139,9 +140,9 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
-    theta = abs(com_loss.item() - pre_loss) * 1.5
-    sigma = torch.normal(mean=com_loss, std=theta ** 2)  # 生成 sigma
-    if sigma < pre_loss:
+    sigma = abs(com_loss.item() - starting_GAN_loss)
+    theta = torch.normal(mean=com_loss, std=sigma ** 2)  # 生成 sigma
+    if theta < pre_loss:
 
         d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
 
