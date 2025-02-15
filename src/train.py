@@ -133,6 +133,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer, pre_loss,
                     d_optimizer, d_loss, pre_res):
 
+    d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
     # --- Train Generator ---
     generator.train()
 
@@ -145,8 +146,6 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sigma = abs(com_loss.item() - pre_loss) * 1.3  # 大约扩散0.22的概率到pre_loss的另一边
     theta = torch.normal(mean=com_loss, std=sigma ** 2)  # 生成 sigma
     if theta < pre_loss:
-
-        d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
 
         fake_preds = discriminator(sr_images)
 
