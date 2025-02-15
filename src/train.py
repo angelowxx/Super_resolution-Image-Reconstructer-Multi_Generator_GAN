@@ -140,7 +140,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
-    sigma = abs(com_loss.item() - starting_GAN_loss)
+    sigma = abs(com_loss.item() - starting_GAN_loss) + 0.00001
     theta = torch.normal(mean=com_loss, std=sigma ** 2)  # 生成 sigma
     if theta < pre_loss:
 
