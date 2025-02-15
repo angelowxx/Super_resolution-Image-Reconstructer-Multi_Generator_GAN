@@ -137,7 +137,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     theta = abs(com_loss.item() - pre_loss)
     sigma = torch.normal(mean=com_loss, std=theta ** 2)  # 生成 sigma
     if sigma < pre_loss:
-        d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer).item()
+        d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer)
         # Discriminator prediction on fake data
         fake_preds = discriminator(sr_images)
         g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
@@ -152,7 +152,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
     generator.eval()
 
-    return com_loss.item(), d_loss, sr_images
+    return com_loss.item(), d_loss.item(), sr_images
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer):
