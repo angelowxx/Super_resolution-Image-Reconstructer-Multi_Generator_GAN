@@ -216,5 +216,4 @@ def validate(model, val_loader, device, epoch, num_models):
 
 if __name__ == "__main__":
 
-    train_example(50, 3)
-    train_example(50, 1)
+    train_example(60, 3)
