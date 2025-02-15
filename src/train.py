@@ -65,7 +65,7 @@ def train_example(num_epochs, num_models):
         d_lr_scheduler.step()
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        validate(model[-1], val_loader, device, epoch, num_models)
+        validate(model[-1], train_loader, device, epoch, num_models)
 
         # 将模型按照对比损失，从大到校排列
         shuffle_lists_in_same_order(model, lr_schedulers, optimizer, gen_losses)
