@@ -22,6 +22,8 @@ def train_example(num_epochs, num_models):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    starting_GAN_loss = 0.05
+
     criterion = torch.nn.L1Loss()
     discriminator = Discriminator().to(device)
     model = [SRResNet().to(device) for i in range(num_models)]
@@ -55,7 +57,7 @@ def train_example(num_epochs, num_models):
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, criterion,
-                                   device, epoch, num_epochs, gen_losses)
+                                   device, epoch, num_epochs, gen_losses, starting_GAN_loss)
         avg_losses.append(avg_loss)
 
         for scheduler in lr_schedulers:
@@ -88,16 +90,17 @@ def train_example(num_epochs, num_models):
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
-                    , criterion, device, epoch, num_epochs, gen_losses):
+                    , criterion, device, epoch, num_epochs, gen_losses, starting_GAN_loss):
     total_loss = 0
+
     t = tqdm(train_loader, desc=f"Epoch [{epoch + 1}/{num_epochs}] Training")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        pre_loss = 1  # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
         g_loss = 0
         d_loss = 1
+        pre_loss = starting_GAN_loss  # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
 
         for i in range(len(model)):
             generator = model[i]
@@ -124,26 +127,23 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     criterion, g_optimizer, pre_loss, d_optimizer):
+    d_loss = 0.5
+    d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer)
+
     # --- Train Generator ---
     generator.train()
 
     sr_images = generator(lr_imgs)
 
     com_loss = criterion(sr_images, hr_imgs)
-    d_loss = 0.5
 
     # 当前loss比pre_loss大时，当前generator向前一个学习
     # 或者改成按概率决定 sigma = Norm(g_loss, pre_loss**2), if sigma > pre_loss
     theta = abs(com_loss.item() - pre_loss)
     sigma = torch.normal(mean=com_loss, std=theta ** 2)  # 生成 sigma
     if sigma < pre_loss:
-        generator.eval()
-        d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer)
-        generator.train()
 
-        sr_images = generator(lr_imgs)
-        with torch.no_grad():
-            fake_preds = discriminator(sr_images)
+        fake_preds = discriminator(sr_images)
 
         g_loss = criterion(fake_preds, torch.ones_like(fake_preds))
 
