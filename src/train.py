@@ -137,7 +137,9 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     theta = abs(com_loss.item() - pre_loss)
     sigma = torch.normal(mean=com_loss, std=theta ** 2)  # 生成 sigma
     if sigma < pre_loss:
+        generator.eval()
         d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, criterion, d_optimizer)
+        generator.train()
 
         sr_images = generator(lr_imgs)
         with torch.no_grad():
