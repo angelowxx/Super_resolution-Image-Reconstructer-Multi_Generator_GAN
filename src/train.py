@@ -105,8 +105,8 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                               criterion, optimizer, pre_loss, d_optimizer)
             if g_loss < pre_loss:
-                pre_res = sr_imgs
                 pre_loss = g_loss
+
             gen_losses[i] += g_loss
 
         total_loss += g_loss
