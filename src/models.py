@@ -88,17 +88,28 @@ class Discriminator(nn.Module):
             nn.BatchNorm2d(num_filters * 8),
             nn.LeakyReLU(0.2, inplace=True),
 
-            # Output layer: (num_filters * 8 x H/16 x W/16) -> (1 x H/8 x W/8)
+            # Output layer: (num_filters * 8 x H/16 x W/16) -> (1 x H/32 x W/32)
             nn.Conv2d(num_filters * 8, num_filters, kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(num_filters),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(num_filters, 1, kernel_size=4, stride=1, padding=1),
-            nn.Sigmoid(),
+        )
+
+        # 自适应池化，固定输出尺寸，例如 (4, 4)
+        self.global_pool = nn.AdaptiveAvgPool2d((4, 4))
+
+        # 全连接层
+        self.classifier = nn.Sequential(
+            nn.Flatten(),  # 拉平成 (batch, num_filters * 4 * 4)
+            nn.Linear(num_filters * 4 * 4, 1),
+            nn.Sigmoid()
         )
 
     def forward(self, x):
-        return self.model(x)
+        self.model(x)
+        x = self.global_pool(x)  # 变成固定大小
+        x = self.classifier(x)  # 通过全连接层
+        return x
 
 
 class PerceptualLoss(nn.Module):
