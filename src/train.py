@@ -203,7 +203,7 @@ def validate(model, val_loader, device, epoch, num_models):
             comp = torch.cat((lr_up, sr_imgs[i], hr_imgs[i]), dim=2)
             comp_list.append(comp)
         # 制作成图片网格，每行一个样本
-        comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=True)
+        comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=False)
         save_path = os.path.join(f"results{num_models}", f"epoch_{epoch+1}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
         print(f"Epoch {epoch+1}: Comparison image saved to {save_path}")
