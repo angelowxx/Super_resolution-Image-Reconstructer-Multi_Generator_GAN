@@ -48,7 +48,7 @@ def train_example(rank, world_size, num_epochs, num_models):
     model = [nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
              for _ in range(num_models)]
 
-    optimizer = [optim.Adam(generator.parameters(), lr=lr_generator+random.uniform(-1e-5, 1e-5)) for generator in model]
+    optimizer = [optim.Adam(generator.parameters(), lr=lr_generator+random.uniform(-5e-5, 5e-5)) for generator in model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator)
 
     scheduler = optim.lr_scheduler.CosineAnnealingLR
