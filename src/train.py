@@ -146,13 +146,12 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     generator.train()
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
-    g_d_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
 
     if model_idx < 4:
         if model_idx < 1:
             g_loss = g_criterion(sr_images, hr_imgs)
         else:
-            g_loss = g_d_loss
+            g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
             # Update generator
         g_optimizer.zero_grad()
         g_loss.backward()
@@ -162,6 +161,9 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
         interpolate_models(generator, better_model)
 
     generator.eval()
+
+    with torch.no_grad():
+        g_d_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
 
     return g_d_loss.item(), d_loss, sr_images
 
