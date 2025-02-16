@@ -48,7 +48,7 @@ def train_example(num_epochs, num_models):
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
-    train_loader = DataLoader(train_data, batch_size=16, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
 
     # image_folder_path = os.path.join(os.getcwd(), 'data', 'val')
     # val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
