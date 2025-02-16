@@ -24,7 +24,7 @@ def train_example(num_epochs, num_models):
 
     starting_GAN_loss = 1
     lr_generator = 2e-4
-    lr_discriminator = lr_generator/4
+    lr_discriminator = lr_generator/num_models
 
     g_criterion = torch.nn.L1Loss()
     d_criterion = torch.nn.BCELoss()
