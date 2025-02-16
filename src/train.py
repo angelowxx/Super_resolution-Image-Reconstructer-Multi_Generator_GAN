@@ -73,7 +73,7 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0:
-            validate(model[0], train_loader, device, epoch, num_models, desc)
+            validate(model[0], train_loader, device, epoch, num_models, "Pre")
 
         if avg_loss < 0.02:
             break
@@ -97,7 +97,7 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0:
-            validate(model[-1], train_loader, device, epoch, num_models, desc)
+            validate(model[-1], train_loader, device, epoch, num_models, "Post")
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
