@@ -19,8 +19,8 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_model = 3  # 生成模型池大小
-nums_epoch = 100
+nums_model = 1  # 生成模型池大小
+nums_epoch = 1
 
 
 def train_example(rank, world_size, num_epochs, num_models):
@@ -51,27 +51,10 @@ def train_example(rank, world_size, num_epochs, num_models):
     optimizer = [optim.Adam(generator.parameters(), lr=lr_generator+random.uniform(-5e-5, 5e-5)) for generator in model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator)
 
-    scheduler = optim.lr_scheduler.CosineAnnealingLR
-    d_lr_scheduler = scheduler(
-        optimizer=d_optimizer,
-        T_max=num_epochs,
-    )
-    lr_schedulers = []
-    for i in range(len(model)):
-        g_lr_scheduler = scheduler(
-            optimizer=optimizer[i],
-            T_max=num_epochs,
-        )
-        lr_schedulers.append(g_lr_scheduler)
-
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
     sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=world_size, rank=rank)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=8, sampler=sampler, num_workers=0)
-
-    # image_folder_path = os.path.join(os.getcwd(), 'data', 'val')
-    # val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
-    # val_loader = DataLoader(val_data, batch_size=16, shuffle=True)
 
     avg_losses = []
 
@@ -81,16 +64,32 @@ def train_example(rank, world_size, num_epochs, num_models):
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, g_criterion,
-                                   d_criterion, device, epoch, num_epochs, gen_losses)
+                                   d_criterion, device, epoch, num_epochs, gen_losses, True)
         avg_losses.append(avg_loss)
 
-        #for scheduler in lr_schedulers:
-            #scheduler.step()
+        # 将模型按照对比损失，从小到大排列
+        shuffle_lists_in_same_order(model, optimizer, gen_losses)
 
-        #d_lr_scheduler.step()
+        # 验证：每个epoch结束后随机取一个batch验证效果
+        if (epoch + 1) % 5 == 0:
+            validate(model[0], train_loader, device, epoch, num_models)
+
+        if avg_loss < 0.02:
+            break
+    optimizer = [optim.Adam(generator.parameters(), lr=lr_generator / 100 + random.uniform(-5e-5, 5e-5)) for generator in
+                 model]
+
+    for epoch in range(num_epochs):
+        sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
+        # if epoch > -1:
+        #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
+        gen_losses = [0 for i in range(len(model))]
+        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, g_criterion,
+                                   d_criterion, device, epoch, num_epochs, gen_losses, False)
+        avg_losses.append(avg_loss)
 
         # 将模型按照对比损失，从小到大排列
-        shuffle_lists_in_same_order(model, lr_schedulers, optimizer, gen_losses)
+        shuffle_lists_in_same_order(model, optimizer, gen_losses)
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0:
@@ -115,14 +114,14 @@ def train_example(rank, world_size, num_epochs, num_models):
     plt.savefig(os.path.join(f'results{num_models}', 'training_loss_curve.png'))
 
 
-
-
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
-                    , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses):
+                    , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses, is_pretraining):
     total_loss = 0
-    d_loss = 1
-
-    t = tqdm(train_loader, desc=f"Epoch [{epoch + 1}/{num_epochs}] Training")
+    if is_pretraining:
+        description = "Pre_Training"
+    else:
+        description = "Training"
+    t = tqdm(train_loader, desc=f"Epoch [{epoch + 1}/{num_epochs}] {description}")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
@@ -138,7 +137,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
             g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                               g_criterion, d_criterion, optimizer,
-                                              d_optimizer, i, better_model, gen_losses)
+                                              d_optimizer, i, better_model, gen_losses, is_pretraining)
 
             if i == len(model) - 1:
                 first_loss = g_loss
@@ -153,37 +152,31 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
     for i in range(len(gen_losses)):
         gen_losses[i] /= len(train_loader)  # 直接修改原列表
 
-    print(f"Epoch [{epoch + 1}/{num_epochs}] Training Loss: {avg_loss:.6f}")
+    print(f"Epoch [{epoch + 1}/{num_epochs}] {description} Loss: {avg_loss:.6f}")
     return avg_loss
 
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer,
-                    d_optimizer, model_idx, better_model, gen_losses):
+                    d_optimizer, model_idx, better_model, gen_losses, is_pretraining):
     torch.autograd.set_detect_anomaly(True)
     # --- Train Generator ---
     generator.train()
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
 
-    # 最强的模型学习相似度，最弱的模型备份最强的模型，剩下的学习生成度
-    # 不适用单个模型训练
-    if model_idx == 0:
-        generator.load_state_dict(better_model.state_dict())
-    else:
-        if model_idx != len(gen_losses) - 1:
-            g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
-        else:
-            g_loss = g_criterion(sr_images, hr_imgs)    # 后期改成高维比对
+    if is_pretraining:
+        g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
 
-        g_optimizer.zero_grad()
-        g_loss.backward()
-        g_optimizer.step()
+    else:
+        g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
+
+    g_optimizer.zero_grad()
+    g_loss.backward()
+    g_optimizer.step()
 
     generator.eval()
 
-    sr_images = generator(lr_imgs)
-    g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))    # 为下次排序准备
     loss_item = g_loss.item()
 
     del g_loss
