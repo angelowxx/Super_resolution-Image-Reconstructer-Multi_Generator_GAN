@@ -92,6 +92,8 @@ def train_example(rank, world_size, num_epochs, num_models):
         if (epoch + 1) % 5 == 0:
             validate(model[0], train_loader, device, epoch, num_models)
 
+    dist.destroy_process_group()  # 训练结束后销毁进程组
+
     # Save the generator model's state_dict
     # avg_losses[0] = 1 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
     for i in range(len(model)):
@@ -108,7 +110,7 @@ def train_example(rank, world_size, num_epochs, num_models):
     # Save the plot as an image file in the 'results' directory
     plt.savefig(os.path.join(f'results{num_models}', 'training_loss_curve.png'))
 
-    dist.destroy_process_group()  # 训练结束后销毁进程组
+
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
