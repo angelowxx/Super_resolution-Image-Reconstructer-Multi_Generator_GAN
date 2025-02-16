@@ -78,4 +78,27 @@ def interpolate_models(model, target_model, alpha=0.2):
         param.data = alpha * target_param.data + (1 - alpha) * param.data
 
 
+"""
+用来训练image_encoder
+image_encoder 用来取代单纯的像素对比， 待完成
+"""
+def uniformity_loss(embeddings, t=2):
+    # embeddings: Tensor of shape [batch, dim]
+    # Compute pairwise distances (using pdist, which returns distances for each pair)
+    pairwise_dists = torch.pdist(embeddings, p=2)
+    # Compute loss: encourages large distances
+    loss = torch.log(torch.mean(torch.exp(-t * pairwise_dists.pow(2))))
+    return loss
+
+def total_loss(emb_anchor, emb_positive, t=2, margin=1.0):
+    # Alignment loss (e.g., mean squared error between positives)
+    align_loss = torch.nn.functional.mse_loss(emb_anchor, emb_positive)
+
+    # Combine the anchor and positive into one batch for the uniformity loss
+    embeddings = torch.cat([emb_anchor, emb_positive], dim=0)
+    uni_loss = uniformity_loss(embeddings, t=t)
+
+    return align_loss + uni_loss
+
+
 
