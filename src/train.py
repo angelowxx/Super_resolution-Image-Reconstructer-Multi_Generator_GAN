@@ -166,6 +166,8 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
 
+    # 最强的模型学习相似度，最弱的模型备份最强的模型，剩下的学习生成度
+    # 不适用单个模型训练
     if model_idx == 0:
         generator.load_state_dict(better_model.state_dict())
     else:
