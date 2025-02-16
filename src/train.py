@@ -102,9 +102,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        g_loss = 0
         pre_loss = starting_GAN_loss  # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
-        pre_res = hr_imgs
         first_loss = 0
         better_model = model[0]
 
@@ -113,11 +111,10 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             optimizer = g_optimizer[i]
 
             g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                                      g_criterion, d_criterion, optimizer, pre_loss,
-                                                      d_optimizer, d_loss, pre_res, i, better_model)
+                                                      g_criterion, d_criterion, optimizer,
+                                                      d_optimizer, i, better_model)
             if g_loss < pre_loss:
                 pre_loss = g_loss
-                pre_res = hr_imgs
                 better_model = generator
 
             if i == 0:
@@ -125,8 +122,9 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
             gen_losses[i] += g_loss
 
-        total_loss += first_loss
         t.set_postfix(g=first_loss, d=d_loss)
+
+        torch.cuda.empty_cache()  # Free unused memory
 
     avg_loss = total_loss / len(train_loader)
 
@@ -138,8 +136,8 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                    g_criterion, d_criterion, g_optimizer, pre_loss,
-                    d_optimizer, d_loss, pre_res, model_idx, better_model):
+                    g_criterion, d_criterion, g_optimizer,
+                    d_optimizer, model_idx, better_model):
 
     # --- Train Generator ---
     d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
