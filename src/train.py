@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from src.models import SRResNet, Discriminator, PerceptualLoss
 from src.transformers import normalize_img_size, downward_img_quality
-from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order
+from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order, interpolate_models
 from PIL import Image
 import torchvision.utils as vutils
 
@@ -106,6 +106,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         pre_loss = starting_GAN_loss  # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
         pre_res = hr_imgs
         first_loss = 0
+        recorded_model = model[0]
 
         for i in range(len(model)):
             generator = model[i]
@@ -113,10 +114,11 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
             g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                                       g_criterion, d_criterion, optimizer, pre_loss,
-                                                      d_optimizer, d_loss, pre_res, i)
+                                                      d_optimizer, d_loss, pre_res, i, better_model)
             if g_loss < pre_loss:
                 pre_loss = g_loss
                 pre_res = hr_imgs
+                recorded_model = generator
 
             if i == 0:
                 first_loss = g_loss
@@ -137,7 +139,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer, pre_loss,
-                    d_optimizer, d_loss, pre_res, model_idx):
+                    d_optimizer, d_loss, pre_res, model_idx, better_model):
 
     # --- Train Generator ---
     d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
@@ -149,10 +151,8 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     if model_idx < 1:
         g_loss = g_criterion(sr_images, hr_imgs)
 
-    elif model_idx > 2:
-        with torch.no_grad():
-            better_preds = discriminator(pre_res)
-        g_loss = torch.mean(torch.relu(better_preds-fake_preds))
+    elif model_idx > 3:
+        interpolate_models(generator, better_model)
     else:
         g_loss = g_d_loss
 
