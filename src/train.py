@@ -77,8 +77,9 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         if avg_loss < 0.02:
             break
-    optimizer = [optim.Adam(generator.parameters(), lr=(lr_generator + random.uniform(-5e-5, 5e-5))/100) for generator in
+    optimizer = [optim.Adam(generator.parameters(), lr=(lr_generator + random.uniform(-5e-5, 5e-5)) / 100) for generator in
                  model]
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator / 100)
 
     for generator in model[1:]:
         generator.load_state_dict(model[0].state_dict())
