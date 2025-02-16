@@ -156,6 +156,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer,
                     d_optimizer, model_idx, better_model, gen_losses):
+    torch.autograd.set_detect_anomaly(True)
     # --- Train Generator ---
     generator.train()
     sr_images = generator(lr_imgs)
@@ -180,6 +181,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer):
+    torch.autograd.set_detect_anomaly(True)
     # --- Train Discriminator ---
     discriminator.train()
 
