@@ -152,7 +152,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
         del g_loss
 
     else:
-        interpolate_models(generator, better_model)
+        generator.load_state_dict(better_model.state_dict())
 
     generator.eval()
 
