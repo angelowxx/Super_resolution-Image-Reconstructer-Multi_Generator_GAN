@@ -143,7 +143,8 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     if model_idx == 0 and gen_losses[0] > gen_losses[-1] * 1.5:
         interpolate_models(generator, better_model, 0.1)
 
-    g_loss = 30 * g_criterion(sr_images, hr_imgs) + d_criterion(fake_preds, torch.ones_like(fake_preds))
+    g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
+    # g_loss = 30 * g_criterion(sr_images, hr_imgs) + d_criterion(fake_preds, torch.ones_like(fake_preds))
     g_optimizer.zero_grad()
     g_loss.backward()
     g_optimizer.step()
