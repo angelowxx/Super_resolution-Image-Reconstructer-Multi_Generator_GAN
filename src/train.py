@@ -17,6 +17,9 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
+nums_model = 3  # 生成模型池大小
+nums_epoch = 50
+
 
 def train_example(rank, world_size, num_epochs, num_models):
     # 初始化进程组
@@ -28,7 +31,6 @@ def train_example(rank, world_size, num_epochs, num_models):
     torch.cuda.set_device(rank)
     device = torch.device(f"cuda:{rank}")
 
-    print(f'Training with {num_models} generators competing!')
     # 确保结果保存目录存在
     os.makedirs(f"results{num_models}", exist_ok=True)
 
@@ -246,5 +248,7 @@ def validate(model, val_loader, device, epoch, num_models):
 
 
 if __name__ == "__main__":
+    print(f'Training with {nums_model} generators competing!')
+
     world_size = torch.cuda.device_count()
-    mp.spawn(train_example, args=(world_size, 50, 3), nprocs=world_size)
+    mp.spawn(train_example, args=(world_size, nums_epoch, nums_model), nprocs=world_size)
