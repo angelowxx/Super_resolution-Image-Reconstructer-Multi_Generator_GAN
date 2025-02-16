@@ -47,7 +47,7 @@ def train_example(num_epochs, num_models):
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
-    train_loader = DataLoader(train_data, batch_size=16, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=10, shuffle=True)
 
     # image_folder_path = os.path.join(os.getcwd(), 'data', 'val')
     # val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
@@ -102,9 +102,8 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        pre_loss = starting_GAN_loss  # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
         first_loss = 0
-        better_model = model[0]
+        better_model = model[-1]
 
         for i in range(len(model)):
             generator = model[i]
@@ -112,10 +111,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
             g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                                       g_criterion, d_criterion, optimizer,
-                                                      d_optimizer, i, better_model)
-            if g_loss < pre_loss:
-                pre_loss = g_loss
-                better_model = generator
+                                                      d_optimizer, i, better_model, len(model))
 
             if i == 0:
                 first_loss = g_loss
@@ -123,8 +119,6 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             gen_losses[i] += g_loss
 
         t.set_postfix(g=first_loss, d=d_loss)
-
-
 
     avg_loss = total_loss / len(train_loader)
 
@@ -137,7 +131,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer,
-                    d_optimizer, model_idx, better_model):
+                    d_optimizer, model_idx, better_model, num_model):
 
     # --- Train Generator ---
     d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
@@ -145,8 +139,8 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
 
-    if model_idx < 4:
-        if model_idx < 1:
+    if model_idx > 1:
+        if model_idx >= num_model-1:
             g_loss = g_criterion(sr_images, hr_imgs)
         else:
             g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
