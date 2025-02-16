@@ -106,7 +106,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         pre_loss = starting_GAN_loss  # 对比损失大于这个时向原图学习，小于这个时竞争：对比损失较大的向原图学习，较小的向discriminator学习
         pre_res = hr_imgs
         first_loss = 0
-        recorded_model = model[0]
+        better_model = model[0]
 
         for i in range(len(model)):
             generator = model[i]
@@ -118,7 +118,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             if g_loss < pre_loss:
                 pre_loss = g_loss
                 pre_res = hr_imgs
-                recorded_model = generator
+                better_model = generator
 
             if i == 0:
                 first_loss = g_loss
