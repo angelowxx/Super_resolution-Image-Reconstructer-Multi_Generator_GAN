@@ -11,9 +11,9 @@ from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from models import SRResNet, Discriminator, PerceptualLoss
-from transformers import normalize_img_size, downward_img_quality
-from utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order, interpolate_models
+from src.models import SRResNet, Discriminator, PerceptualLoss
+from src.transformers import normalize_img_size, downward_img_quality
+from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order, interpolate_models
 from PIL import Image
 import torchvision.utils as vutils
 
