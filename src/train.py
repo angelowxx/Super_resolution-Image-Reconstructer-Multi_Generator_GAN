@@ -29,7 +29,8 @@ def train_example(num_epochs, num_models):
     g_criterion = torch.nn.L1Loss()
     d_criterion = torch.nn.BCELoss()
     discriminator = Discriminator().to(device)
-    model = [SRResNet().to(device) for i in range(num_models)]
+    discriminator = torch.nn.DataParallel(discriminator)
+    model = [torch.nn.DataParallel(SRResNet().to(device)) for _ in range(num_models)]
     optimizer = [optim.Adam(generator.parameters(), lr=lr_generator) for generator in model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator)
     scheduler = optim.lr_scheduler.CosineAnnealingLR
