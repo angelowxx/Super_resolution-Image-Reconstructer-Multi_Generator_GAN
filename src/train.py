@@ -20,6 +20,8 @@ import torch.nn.functional as F
 
 def train_example(rank, world_size, num_epochs, num_models):
     # 初始化进程组
+    os.environ['MASTER_ADDR'] = '127.0.0.1'
+    os.environ['MASTER_PORT'] = '12355'  # 选择一个未被占用的端口
     dist.init_process_group("nccl", rank=rank, world_size=world_size)
 
     # 设置 GPU
