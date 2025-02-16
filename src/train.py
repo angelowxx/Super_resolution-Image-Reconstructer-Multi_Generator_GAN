@@ -42,6 +42,7 @@ def train_example(rank, world_size, num_epochs, num_models):
     g_criterion = torch.nn.L1Loss()
     d_criterion = torch.nn.BCELoss()
     discriminator = Discriminator().to(device)
+    discriminator = nn.SyncBatchNorm.convert_sync_batchnorm(discriminator)
     discriminator = nn.parallel.DistributedDataParallel(discriminator, device_ids=[rank])
 
     model = [nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
