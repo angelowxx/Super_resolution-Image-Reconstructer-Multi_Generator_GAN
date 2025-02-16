@@ -1,4 +1,6 @@
 import os
+import random
+
 import torch.multiprocessing as mp
 import torch.distributed as dist
 
@@ -45,7 +47,7 @@ def train_example(rank, world_size, num_epochs, num_models):
     model = [nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
              for _ in range(num_models)]
 
-    optimizer = [optim.Adam(generator.parameters(), lr=lr_generator) for generator in model]
+    optimizer = [optim.Adam(generator.parameters(), lr=lr_generator+random.uniform(-1e-4, 1e-4)) for generator in model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator)
 
     scheduler = optim.lr_scheduler.CosineAnnealingLR
