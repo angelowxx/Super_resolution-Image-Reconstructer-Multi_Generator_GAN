@@ -23,7 +23,7 @@ def train_example(num_epochs, num_models):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     starting_GAN_loss = 1
-    lr_generator = 2e-4
+    lr_generator = 1e-4
     lr_discriminator = lr_generator/num_models
 
     g_criterion = torch.nn.L1Loss()
