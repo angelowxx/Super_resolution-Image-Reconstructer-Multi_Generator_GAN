@@ -1,8 +1,11 @@
 import os
+import torch.multiprocessing as mp
+import torch.distributed as dist
 
 import torch
 import torch.optim as optim
 from matplotlib import pyplot as plt
+from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -15,12 +18,17 @@ import torchvision.utils as vutils
 import torch.nn.functional as F
 
 
-def train_example(num_epochs, num_models):
+def train_example(rank, world_size, num_epochs, num_models):
+    # 初始化进程组
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+
+    # 设置 GPU
+    torch.cuda.set_device(rank)
+    device = torch.device(f"cuda:{rank}")
+
     print(f'Training with {num_models} generators competing!')
     # 确保结果保存目录存在
     os.makedirs(f"results{num_models}", exist_ok=True)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     starting_GAN_loss = 1
     lr_generator = 1e-4
@@ -29,10 +37,14 @@ def train_example(num_epochs, num_models):
     g_criterion = torch.nn.L1Loss()
     d_criterion = torch.nn.BCELoss()
     discriminator = Discriminator().to(device)
-    discriminator = torch.nn.DataParallel(discriminator)
-    model = [torch.nn.DataParallel(SRResNet().to(device)) for _ in range(num_models)]
+    discriminator = nn.parallel.DistributedDataParallel(discriminator, device_ids=[rank])
+
+    model = [nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
+             for _ in range(num_models)]
+
     optimizer = [optim.Adam(generator.parameters(), lr=lr_generator) for generator in model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator)
+
     scheduler = optim.lr_scheduler.CosineAnnealingLR
     d_lr_scheduler = scheduler(
         optimizer=d_optimizer,
@@ -48,7 +60,8 @@ def train_example(num_epochs, num_models):
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
-    train_loader = DataLoader(train_data, batch_size=40, shuffle=True)
+    sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=world_size, rank=rank)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, sampler=sampler)
 
     # image_folder_path = os.path.join(os.getcwd(), 'data', 'val')
     # val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
@@ -57,6 +70,7 @@ def train_example(num_epochs, num_models):
     avg_losses = []
 
     for epoch in range(num_epochs):
+        sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
@@ -91,6 +105,8 @@ def train_example(num_epochs, num_models):
 
     # Save the plot as an image file in the 'results' directory
     plt.savefig(os.path.join(f'results{num_models}', 'training_loss_curve.png'))
+
+    dist.destroy_process_group()  # 训练结束后销毁进程组
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
@@ -224,4 +240,5 @@ def validate(model, val_loader, device, epoch, num_models):
 
 
 if __name__ == "__main__":
-    train_example(40, 3)
+    world_size = torch.cuda.device_count()
+    mp.spawn(train_example, args=(world_size, 50, 3), nprocs=world_size)
