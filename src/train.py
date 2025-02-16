@@ -164,19 +164,24 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     # --- Train Generator ---
     generator.train()
     sr_images = generator(lr_imgs)
+    fake_preds = discriminator(sr_images)
 
-    if model_idx != len(gen_losses) - 1:
-        fake_preds = discriminator(sr_images)
-        g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
-
+    if model_idx == 0:
+        generator.load_state_dict(better_model.state_dict())
     else:
-        g_loss = g_criterion(sr_images, hr_imgs)
-    # g_loss = 30 * g_criterion(sr_images, hr_imgs) + d_criterion(fake_preds, torch.ones_like(fake_preds))
-    g_optimizer.zero_grad()
-    g_loss.backward()
-    g_optimizer.step()
+        if model_idx != len(gen_losses) - 1:
+            g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
+        else:
+            g_loss = g_criterion(sr_images, hr_imgs)    # 后期改成高维比对
+
+        g_optimizer.zero_grad()
+        g_loss.backward()
+        g_optimizer.step()
 
     generator.eval()
+
+    sr_images = generator(lr_imgs)
+    g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))    # 为下次排序准备
     loss_item = g_loss.item()
 
     del g_loss
