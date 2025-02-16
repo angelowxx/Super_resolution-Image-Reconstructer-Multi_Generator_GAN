@@ -140,11 +140,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     fake_preds = discriminator(sr_images)
 
     if model_idx > 1:
-        if model_idx >= num_model-1:
-            g_loss = g_criterion(sr_images, hr_imgs)
-        else:
-            g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
-            # Update generator
+        g_loss = 10 * g_criterion(sr_images, hr_imgs) + d_criterion(fake_preds, torch.ones_like(fake_preds))
         g_optimizer.zero_grad()
         g_loss.backward()
         g_optimizer.step()
