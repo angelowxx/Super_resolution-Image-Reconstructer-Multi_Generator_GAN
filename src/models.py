@@ -73,25 +73,25 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
             nn.Conv2d(input_channels, num_filters, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters),
+            nn.SyncBatchNorm(num_filters),
             nn.LeakyReLU(0.2, inplace=True),
 
             # Hidden layers: progressively downsample
             nn.Conv2d(num_filters, num_filters * 2, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters * 2),
+            nn.SyncBatchNorm(num_filters * 2),
             nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters * 4),
+            nn.SyncBatchNorm(num_filters * 4),
             nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters * 8),
+            nn.SyncBatchNorm(num_filters * 8),
             nn.LeakyReLU(0.2, inplace=True),
 
             # Output layer: (num_filters * 8 x H/16 x W/16) -> (1 x H/32 x W/32)
             nn.Conv2d(num_filters * 8, num_filters, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters),
+            nn.SyncBatchNorm(num_filters),
             nn.LeakyReLU(0.2, inplace=True),
 
         )
@@ -104,6 +104,7 @@ class Discriminator(nn.Module):
             nn.Flatten(),
 
             nn.Linear(num_filters * 4 * 4, num_filters),
+            nn.SyncBatchNorm(num_filters),
             nn.LeakyReLU(0.2),
 
             nn.Linear(num_filters, 1),
