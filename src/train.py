@@ -126,7 +126,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         description = "Pre_Training"
     else:
         description = "Training"
-    t = tqdm(train_loader, desc=f"Epoch [{epoch + 1}/{num_epochs}] {description}")
+    t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
