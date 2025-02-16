@@ -146,8 +146,6 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
         g_loss.backward()
         g_optimizer.step()
 
-        del g_loss
-
     else:
         generator.load_state_dict(better_model.state_dict())
 
