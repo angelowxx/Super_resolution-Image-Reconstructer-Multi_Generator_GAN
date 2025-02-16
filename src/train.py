@@ -171,13 +171,19 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
     if is_pretraining:
         g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
+        g_optimizer.zero_grad()
+        g_loss.backward()
+        g_optimizer.step()
 
     else:
-        g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
-
-    g_optimizer.zero_grad()
-    g_loss.backward()
-    g_optimizer.step()
+        if model_idx == 0:
+            generator.load_state_dict(better_model.state_dict())
+            g_loss = torch.tensor(1)
+        else:
+            g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
+            g_optimizer.zero_grad()
+            g_loss.backward()
+            g_optimizer.step()
 
     generator.eval()
 
