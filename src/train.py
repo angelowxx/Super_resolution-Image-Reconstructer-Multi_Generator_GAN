@@ -138,7 +138,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     generator.train()
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
-    g_loss = torch.tensor(1)
+    g_loss = torch.tensor(0.0, device=lr_imgs.device)  # Ensure it’s on the right device
 
     if model_idx > 1:
         g_loss = 10 * g_criterion(sr_images, hr_imgs) + d_criterion(fake_preds, torch.ones_like(fake_preds))
