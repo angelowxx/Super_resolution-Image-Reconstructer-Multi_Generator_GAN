@@ -93,7 +93,7 @@ def train_example(rank, world_size, num_epochs, num_models):
         if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
             validate(model[0], train_loader, device, epoch, num_models, "Pre")
 
-        if avg_loss < 0.025:
+        if avg_loss < 0.03:
             break
     optimizer = [optim.Adam(generator.parameters(), lr=(lr_generator + random.uniform(-5e-5, 5e-5)) / 100) for generator in
                  model]
