@@ -140,7 +140,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     fake_preds = discriminator(sr_images)
 
     if model_idx == 0 and gen_losses[0] > gen_losses[-1] * 1.5:
-        generator.load_state_dict(better_model.state_dict())
+        interpolate_models(generator, better_model, 0.1)
 
     g_loss = 10 * g_criterion(sr_images, hr_imgs) + d_criterion(fake_preds, torch.ones_like(fake_preds))
     g_optimizer.zero_grad()

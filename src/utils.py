@@ -73,7 +73,7 @@ def shuffle_lists_in_same_order(*lists):
     return [list(t) for t in zip(*combined)]
 
 
-def interpolate_models(model, target_model, alpha=1-1e-5):
+def interpolate_models(model, target_model, alpha=0.2):
     for param, target_param in zip(model.parameters(), target_model.parameters()):
         param.data = alpha * target_param.data + (1 - alpha) * param.data
 
