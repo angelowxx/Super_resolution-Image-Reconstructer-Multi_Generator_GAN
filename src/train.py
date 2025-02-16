@@ -84,10 +84,10 @@ def train_example(rank, world_size, num_epochs, num_models):
                                    d_criterion, device, epoch, num_epochs, gen_losses)
         avg_losses.append(avg_loss)
 
-        for scheduler in lr_schedulers:
-            scheduler.step()
+        #for scheduler in lr_schedulers:
+            #scheduler.step()
 
-        d_lr_scheduler.step()
+        #d_lr_scheduler.step()
 
         # 将模型按照对比损失，从小到大排列
         shuffle_lists_in_same_order(model, lr_schedulers, optimizer, gen_losses)
