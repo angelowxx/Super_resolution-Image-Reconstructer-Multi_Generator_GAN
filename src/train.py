@@ -55,7 +55,7 @@ def train_example(rank, world_size, num_epochs, num_models):
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
     sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=world_size, rank=rank)
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=8, sampler=sampler, num_workers=0)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=16, sampler=sampler, num_workers=0)
 
     avg_losses = []
 
@@ -73,7 +73,7 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0:
-            validate(model[0], train_loader, device, epoch, num_models)
+            validate(model[0], train_loader, device, epoch, num_models, desc)
 
         if avg_loss < 0.02:
             break
@@ -97,7 +97,7 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0:
-            validate(model[0], train_loader, device, epoch, num_models)
+            validate(model[-1], train_loader, device, epoch, num_models, desc)
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
@@ -234,7 +234,7 @@ def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion,
     return loss_item
 
 
-def validate(model, val_loader, device, epoch, num_models):
+def validate(model, val_loader, device, epoch, num_models, desc):
     model.eval()
     with torch.no_grad():
         # 从验证集中获取一个batch
@@ -254,7 +254,7 @@ def validate(model, val_loader, device, epoch, num_models):
             comp_list.append(comp)
         # 制作成图片网格，每行一个样本
         comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=False)
-        save_path = os.path.join(f"results{num_models}", f"epoch_{epoch + 1}_comparison.png")
+        save_path = os.path.join(f"results{num_models}", f"{desc}_epoch_{epoch + 1}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
         print(f"Epoch {epoch + 1}: Comparison image saved to {save_path}")
     return save_path
