@@ -73,6 +73,7 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
             nn.Conv2d(input_channels, num_filters, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(num_filters),
             nn.LeakyReLU(0.2, inplace=True),
 
             # Hidden layers: progressively downsample
@@ -104,7 +105,7 @@ class Discriminator(nn.Module):
 
             nn.Linear(num_filters * 4 * 4, num_filters),
             nn.BatchNorm1d(num_filters),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2),
 
             nn.Linear(num_filters, 1),
             nn.Sigmoid()
