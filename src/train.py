@@ -41,6 +41,7 @@ def train_example(rank, world_size, num_epochs, num_models):
 
     g_criterion = torch.nn.L1Loss()
     d_criterion = torch.nn.BCELoss()
+
     discriminator = Discriminator().to(device)
     discriminator = nn.SyncBatchNorm.convert_sync_batchnorm(discriminator)
     discriminator = nn.parallel.DistributedDataParallel(discriminator, device_ids=[rank])
@@ -63,7 +64,7 @@ def train_example(rank, world_size, num_epochs, num_models):
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
-        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, g_criterion,
+        avg_loss = train_one_epoch(model[0:1], discriminator, train_loader, optimizer, d_optimizer, g_criterion,
                                    d_criterion, device, epoch, num_epochs, gen_losses, True)
         avg_losses.append(avg_loss)
 
@@ -76,8 +77,11 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         if avg_loss < 0.02:
             break
-    optimizer = [optim.Adam(generator.parameters(), lr=lr_generator / 100 + random.uniform(-5e-5, 5e-5)) for generator in
+    optimizer = [optim.Adam(generator.parameters(), lr=(lr_generator + random.uniform(-5e-5, 5e-5))/100) for generator in
                  model]
+
+    for generator in model[1:]:
+        generator.load_state_dict(model[0].state_dict())
 
     for epoch in range(num_epochs):
         sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
