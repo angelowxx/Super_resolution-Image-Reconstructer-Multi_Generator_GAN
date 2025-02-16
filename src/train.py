@@ -18,7 +18,7 @@ import torchvision.utils as vutils
 import torch.nn.functional as F
 
 nums_model = 3  # 生成模型池大小
-nums_epoch = 30
+nums_epoch = 40
 
 
 def train_example(rank, world_size, num_epochs, num_models):
