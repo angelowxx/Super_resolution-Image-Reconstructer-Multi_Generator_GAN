@@ -221,4 +221,4 @@ def validate(model, val_loader, device, epoch, num_models):
 
 
 if __name__ == "__main__":
-    train_example(70, 5)
+    train_example(70, 4)
