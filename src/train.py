@@ -197,7 +197,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     else:
         if model_idx == 0:
             generator.load_state_dict(better_model.state_dict())
-            g_loss = gen_losses[-1]
+            g_loss = torch.tensor(gen_losses[-1])
         else:
             g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
             g_optimizer.zero_grad()
