@@ -99,14 +99,6 @@ def train_example(rank, world_size, num_epochs, num_models):
                  model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator / 100)
 
-    g_lr_schedulers = []
-    for generator in model:
-        lr_scheduler = scheduler(
-            optimizer=d_optimizer,
-            T_max=num_epochs,
-        )
-        g_lr_schedulers.append(lr_scheduler)
-
     for generator in model[1:]:
         generator.load_state_dict(model[0].state_dict())
 
@@ -118,10 +110,6 @@ def train_example(rank, world_size, num_epochs, num_models):
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, g_criterion,
                                    d_criterion, device, epoch, num_epochs, gen_losses, False)
         avg_losses.append(avg_loss)
-
-        d_lr_scheduler.step()
-        for lr_scheduler in g_lr_schedulers:
-            lr_scheduler.step()
 
         # 将模型按照对比损失，从小到大排列
         shuffle_lists_in_same_order(model, optimizer, gen_losses)
