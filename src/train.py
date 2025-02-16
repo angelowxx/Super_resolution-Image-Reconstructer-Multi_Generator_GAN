@@ -111,7 +111,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
             g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                                       g_criterion, d_criterion, optimizer,
-                                                      d_optimizer, i, better_model, len(model))
+                                                      d_optimizer, i, better_model, gen_losses)
 
             if i == len(model)-1:
                 first_loss = g_loss
@@ -131,29 +131,29 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer,
-                    d_optimizer, model_idx, better_model, num_model):
+                    d_optimizer, model_idx, better_model, gen_losses):
 
     # --- Train Generator ---
     d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
     generator.train()
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
-    g_loss = torch.tensor(0.0, device=lr_imgs.device)  # Ensure it’s on the right device
 
-    if model_idx > 1:
-        g_loss = 10 * g_criterion(sr_images, hr_imgs) + d_criterion(fake_preds, torch.ones_like(fake_preds))
-        g_optimizer.zero_grad()
-        g_loss.backward()
-        g_optimizer.step()
-
-    else:
+    if model_idx == 0 and gen_losses[0] > gen_losses[-1] * 1.5:
         generator.load_state_dict(better_model.state_dict())
 
-    generator.eval()
+    g_loss = 10 * g_criterion(sr_images, hr_imgs) + d_criterion(fake_preds, torch.ones_like(fake_preds))
+    g_optimizer.zero_grad()
+    g_loss.backward()
+    g_optimizer.step()
 
+    generator.eval()
+    loss_item = g_loss.item()
+
+    del g_loss
     torch.cuda.empty_cache()  # Free unused memory
 
-    return g_loss.item(), d_loss, sr_images
+    return loss_item, d_loss, sr_images
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer):
