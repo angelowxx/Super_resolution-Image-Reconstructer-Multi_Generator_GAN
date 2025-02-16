@@ -119,6 +119,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             gen_losses[i] += g_loss
 
         t.set_postfix(g=first_loss, d=d_loss)
+        total_loss += first_loss
 
     avg_loss = total_loss / len(train_loader)
 
