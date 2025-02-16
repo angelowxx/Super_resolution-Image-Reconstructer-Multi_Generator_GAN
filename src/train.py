@@ -19,7 +19,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_model = 1  # 生成模型池大小
+nums_model = 5  # 生成模型池大小
 nums_epoch = 1
 
 
