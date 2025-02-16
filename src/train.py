@@ -72,7 +72,7 @@ def train_example(rank, world_size, num_epochs, num_models):
         shuffle_lists_in_same_order(model, optimizer, gen_losses)
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        if (epoch + 1) % 5 == 0:
+        if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
             validate(model[0], train_loader, device, epoch, num_models, "Pre")
 
         if avg_loss < 0.02:
@@ -96,7 +96,7 @@ def train_example(rank, world_size, num_epochs, num_models):
         shuffle_lists_in_same_order(model, optimizer, gen_losses)
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        if (epoch + 1) % 5 == 0:
+        if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
             validate(model[-1], train_loader, device, epoch, num_models, "Post")
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
