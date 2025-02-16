@@ -113,7 +113,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
                                                       g_criterion, d_criterion, optimizer,
                                                       d_optimizer, i, better_model, len(model))
 
-            if i == 0:
+            if i == len(model)-1:
                 first_loss = g_loss
 
             gen_losses[i] += g_loss
@@ -138,6 +138,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     generator.train()
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
+    g_loss = torch.tensor(1)
 
     if model_idx > 1:
         g_loss = 10 * g_criterion(sr_images, hr_imgs) + d_criterion(fake_preds, torch.ones_like(fake_preds))
@@ -152,15 +153,9 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
 
     generator.eval()
 
-    with torch.no_grad():
-        g_d_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
-
-    loss_item = g_d_loss.item()
-
-    del g_d_loss  # Delete loss tensor
     torch.cuda.empty_cache()  # Free unused memory
 
-    return loss_item, d_loss, sr_images
+    return g_loss.item(), d_loss, sr_images
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer):
