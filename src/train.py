@@ -55,7 +55,7 @@ def train_example(rank, world_size, num_epochs, num_models):
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
     sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=world_size, rank=rank)
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=16, sampler=sampler, num_workers=0)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=10, sampler=sampler, num_workers=0)
 
     avg_losses = []
 
