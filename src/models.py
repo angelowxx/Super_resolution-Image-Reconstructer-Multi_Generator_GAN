@@ -104,7 +104,6 @@ class Discriminator(nn.Module):
             nn.Flatten(),
 
             nn.Linear(num_filters * 4 * 4, num_filters),
-            nn.BatchNorm1d(num_filters),
             nn.LeakyReLU(0.2),
 
             nn.Linear(num_filters, 1),
