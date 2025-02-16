@@ -47,7 +47,7 @@ def train_example(num_epochs, num_models):
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
-    train_loader = DataLoader(train_data, batch_size=10, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=16, shuffle=True)
 
     # image_folder_path = os.path.join(os.getcwd(), 'data', 'val')
     # val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
@@ -60,7 +60,7 @@ def train_example(num_epochs, num_models):
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, g_criterion,
-                                   d_criterion, device, epoch, num_epochs, gen_losses, starting_GAN_loss,)
+                                   d_criterion, device, epoch, num_epochs, gen_losses)
         avg_losses.append(avg_loss)
 
         for scheduler in lr_schedulers:
@@ -93,7 +93,7 @@ def train_example(num_epochs, num_models):
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
-                    , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses, starting_GAN_loss):
+                    , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses):
     total_loss = 0
     d_loss = 1
 
