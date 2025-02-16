@@ -24,7 +24,7 @@ def train_example(num_epochs, num_models):
 
     starting_GAN_loss = 1
     lr_generator = 1e-4
-    lr_discriminator = lr_generator/num_models
+    lr_discriminator = lr_generator / num_models
 
     g_criterion = torch.nn.L1Loss()
     d_criterion = torch.nn.BCELoss()
@@ -105,15 +105,17 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         first_loss = 0
         better_model = model[-1]
 
+        d_loss = train_discriminator(model[-1], discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
+
         for i in range(len(model)):
             generator = model[i]
             optimizer = g_optimizer[i]
 
-            g_loss, d_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                                      g_criterion, d_criterion, optimizer,
-                                                      d_optimizer, i, better_model, gen_losses)
+            g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
+                                              g_criterion, d_criterion, optimizer,
+                                              d_optimizer, i, better_model, gen_losses)
 
-            if i == len(model)-1:
+            if i == len(model) - 1:
                 first_loss = g_loss
 
             gen_losses[i] += g_loss
@@ -133,14 +135,12 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer,
                     d_optimizer, model_idx, better_model, gen_losses):
-
     # --- Train Generator ---
-    d_loss = train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
     generator.train()
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
 
-    if model_idx == 0 and gen_losses[0] > gen_losses[-1] * 1.5:
+    if model_idx != len(gen_losses) - 1:
         interpolate_models(generator, better_model, 0.1)
 
     g_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
@@ -155,7 +155,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     del g_loss
     torch.cuda.empty_cache()  # Free unused memory
 
-    return loss_item, d_loss, sr_images
+    return loss_item, sr_images
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer):
