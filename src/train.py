@@ -124,7 +124,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
         t.set_postfix(g=first_loss, d=d_loss)
 
-        torch.cuda.empty_cache()  # Free unused memory
+
 
     avg_loss = total_loss / len(train_loader)
 
@@ -155,6 +155,8 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
         g_loss.backward()
         g_optimizer.step()
 
+        del g_loss
+
     else:
         interpolate_models(generator, better_model)
 
@@ -163,7 +165,12 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     with torch.no_grad():
         g_d_loss = d_criterion(fake_preds, torch.ones_like(fake_preds))
 
-    return g_d_loss.item(), d_loss, sr_images
+    loss_item = g_d_loss.item()
+
+    del g_d_loss  # Delete loss tensor
+    torch.cuda.empty_cache()  # Free unused memory
+
+    return loss_item, d_loss, sr_images
 
 
 def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer):
@@ -196,7 +203,12 @@ def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion,
 
     discriminator.eval()
 
-    return d_loss.item()
+    loss_item = d_loss.item()
+
+    del d_loss  # Delete loss tensor
+    torch.cuda.empty_cache()  # Free unused memory
+
+    return loss_item
 
 
 def validate(model, val_loader, device, epoch, num_models):
