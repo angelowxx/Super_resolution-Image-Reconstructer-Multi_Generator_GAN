@@ -11,9 +11,10 @@ from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.models import SRResNet, Discriminator, PerceptualLoss
+from src.models import SRResNet, ImageFingerPrint, PerceptualLoss
 from src.transformers import normalize_img_size, downward_img_quality
-from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order, interpolate_models
+from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order, interpolate_models, \
+    uniformity_loss
 from PIL import Image
 import torchvision.utils as vutils
 
@@ -21,7 +22,6 @@ import torch.nn.functional as F
 
 nums_model = 3  # 生成模型池大小
 nums_epoch = 100
-proportion_GAN = 2
 
 
 def train_example(rank, world_size, num_epochs, num_models):
@@ -38,21 +38,20 @@ def train_example(rank, world_size, num_epochs, num_models):
     os.makedirs(f"results{num_models}", exist_ok=True)
 
     lr_generator = 1e-4
-    lr_discriminator = 1e-4
+    lr_image_finger_print = 1e-4
 
     g_criterion = torch.nn.L1Loss()
-    d_criterion = torch.nn.BCELoss()
 
-    discriminator = Discriminator().to(device)
-    discriminator = nn.SyncBatchNorm.convert_sync_batchnorm(discriminator)
-    discriminator = nn.parallel.DistributedDataParallel(discriminator, device_ids=[rank])
+    image_finger_print = ImageFingerPrint().to(device)
+    image_finger_print = nn.SyncBatchNorm.convert_sync_batchnorm(image_finger_print)
+    image_finger_print = nn.parallel.DistributedDataParallel(image_finger_print, device_ids=[rank])
 
     model = [nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
              for _ in range(num_models)]
 
     optimizers = [optim.Adam(generator.parameters(), lr=lr_generator + random.uniform(-1e-5, 1e-5)) for generator in
                   model]
-    d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator)
+    d_optimizer = optim.Adam(image_finger_print.parameters(), lr=lr_image_finger_print)
 
     scheduler = optim.lr_scheduler.StepLR
 
@@ -85,18 +84,11 @@ def train_example(rank, world_size, num_epochs, num_models):
     for epoch in range(num_epochs):
         sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
 
-        if epoch % proportion_GAN == 0:
-            desc = "GAN"
-            is_GAN = False
-        else:
-            desc = "COM"
-            is_GAN = True
-
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
-        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizers, d_optimizer, g_criterion,
-                                   d_criterion, device, epoch, num_epochs, gen_losses, is_GAN)
+        avg_loss = train_one_epoch(model, image_finger_print, train_loader, optimizers, d_optimizer
+                                   , g_criterion, device, epoch, num_epochs, gen_losses)
         avg_losses.append(avg_loss)
 
         d_lr_scheduler.step()
@@ -109,7 +101,7 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
-            validate(model[-1], val_loader, device, epoch, num_models, desc)
+            validate(model[-1], val_loader, device, epoch, num_models, "fingerprint")
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
@@ -130,39 +122,33 @@ def train_example(rank, world_size, num_epochs, num_models):
     plt.savefig(os.path.join(f'results{num_models}', 'training_loss_curve.png'))
 
 
-def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
-                    , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses, is_GAN):
+def train_one_epoch(model, image_finger_print, train_loader, g_optimizer, d_optimizer
+                    , g_criterion, device, epoch, num_epochs, gen_losses):
     total_loss = 0
-    if is_GAN:
-        description = "Pre_Training"
-    else:
-        description = "Training"
+    description = "Training"
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
 
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        first_loss = 0
         better_model = model[-1]
+        g_loss = 0
 
-        d_loss = train_discriminator(model[-1], discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
+        d_loss = train_image_finger_print(image_finger_print, hr_imgs, d_optimizer)
 
         for i in range(len(model)):
             generator = model[i]
             optimizer = g_optimizer[i]
 
-            g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                              g_criterion, d_criterion, optimizer,
-                                              d_optimizer, i, better_model, gen_losses, is_GAN)
-
-            if i == len(model) - 1:
-                first_loss = g_loss
+            g_loss = train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
+                                     g_criterion, optimizer,
+                                     i, better_model, gen_losses)
 
             gen_losses[i] += g_loss
 
-        t.set_postfix(g=first_loss, d=d_loss)
-        total_loss += first_loss
+        t.set_postfix(g=g_loss, d=d_loss)
+        total_loss += g_loss
 
     avg_loss = total_loss / len(train_loader)
 
@@ -173,22 +159,24 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
     return avg_loss
 
 
-def train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                    g_criterion, d_criterion, g_optimizer,
-                    d_optimizer, model_idx, better_model, gen_losses, is_GAN):
+def train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
+                    g_criterion, g_optimizer,
+                    model_idx, better_model, gen_losses):
     torch.autograd.set_detect_anomaly(True)
     # --- Train Generator ---
     generator.train()
-    sr_images = generator(lr_imgs)
-    fake_preds = discriminator(sr_images)
 
     if model_idx == 0:
         generator.load_state_dict(better_model.state_dict())
         g_loss = torch.tensor(gen_losses[-1])
     else:
-        g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
-        if not is_GAN:
-            g_loss = g_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
+        sr_images = generator(lr_imgs)
+
+        fake_preds = image_finger_print(sr_images)
+        real_preds = image_finger_print(hr_imgs)
+
+        g_loss = g_criterion(fake_preds, real_preds)  # 高维比对
+
         g_optimizer.zero_grad()
         g_loss.backward()
         g_optimizer.step()
@@ -200,39 +188,25 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     del g_loss
     torch.cuda.empty_cache()  # Free unused memory
 
-    return loss_item, sr_images
+    return loss_item
 
 
-def train_discriminator(generator, discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer):
+def train_image_finger_print(image_finger_print, hr_imgs, d_optimizer):
     torch.autograd.set_detect_anomaly(True)
-    # --- Train Discriminator ---
-    discriminator.train()
+    # --- Train image_finger_print ---
+    image_finger_print.train()
 
-    # Generate fake images
-    with torch.no_grad():  # 不让生成器回传梯度
-        sr_images = generator(lr_imgs)
+    # Get image_finger_print predictions
+    real_preds = image_finger_print(hr_imgs)
 
-    # Get discriminator predictions
-    real_preds = discriminator(hr_imgs)
-    fake_preds = discriminator(sr_images)
+    d_loss = uniformity_loss(real_preds)
 
-    # Create real and fake labels
-    real_labels = torch.ones_like(real_preds)
-    fake_labels = torch.zeros_like(fake_preds)
-
-    # Compute losses separately
-    real_loss = d_criterion(real_preds, real_labels)
-    fake_loss = d_criterion(fake_preds, fake_labels)
-
-    # Total discriminator loss
-    d_loss = (real_loss + fake_loss) / 2  # 平均损失
-
-    # Update discriminator
+    # Update image_finger_print
     d_optimizer.zero_grad()
     d_loss.backward()
     d_optimizer.step()
 
-    discriminator.eval()
+    image_finger_print.eval()
 
     loss_item = d_loss.item()
 

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from src.variables import clip_width, clip_height
 
 
 class ResidualBlock(nn.Module):
@@ -67,53 +68,43 @@ class SRResNet(nn.Module):
         return out
 
 
-class Discriminator(nn.Module):
-    def __init__(self, input_channels=3, num_filters=64):
-        super(Discriminator, self).__init__()
+class ImageFingerPrint(nn.Module):
+    def __init__(self, input_channels=3,  num_filters=32):
+        super(ImageFingerPrint, self).__init__()
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
-            nn.Conv2d(input_channels, num_filters, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(input_channels, num_filters, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(num_filters),
             nn.LeakyReLU(0.2, inplace=True),
 
             # Hidden layers: progressively downsample
-            nn.Conv2d(num_filters, num_filters * 2, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(num_filters, num_filters * 2, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(num_filters * 2),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(num_filters * 4),
             nn.LeakyReLU(0.2, inplace=True),
 
-            nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(num_filters * 8),
             nn.LeakyReLU(0.2, inplace=True),
 
-            # Output layer: (num_filters * 8 x H/16 x W/16) -> (1 x H/32 x W/32)
-            nn.Conv2d(num_filters * 8, num_filters, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(num_filters * 8, num_filters, kernel_size=3, stride=2, padding=1),
             nn.BatchNorm2d(num_filters),
             nn.LeakyReLU(0.2, inplace=True),
 
         )
 
-        # 自适应池化，固定输出尺寸，例如 (4, 4)
-        self.global_pool = nn.AdaptiveAvgPool2d((4, 4))
-
         # 全连接层
         self.classifier = nn.Sequential(
-            nn.Flatten(),
-
-            nn.Linear(num_filters * 4 * 4, num_filters),
-            nn.BatchNorm1d(num_filters),
-            nn.LeakyReLU(0.2),
-
-            nn.Linear(num_filters, 1),
-            nn.Sigmoid()
+            nn.Linear(num_filters * (clip_width//16) * (clip_height//16), num_filters * (clip_width//16)),
+            nn.BatchNorm1d(num_filters * (clip_width//16)),
         )
 
     def forward(self, x):
         x = self.model(x)
-        x = self.global_pool(x)  # 变成固定大小
+        x = x.view(x.size(0), -1)
         x = self.classifier(x)  # 通过全连接层
         return x
 
