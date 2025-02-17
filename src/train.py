@@ -76,7 +76,7 @@ def train_example(rank, world_size, num_epochs, num_models):
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=10, sampler=sampler, num_workers=0)
 
     if dist.get_rank() == 0:
-        image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
+        image_folder_path = os.path.join(os.getcwd(), 'data', 'val')
         val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=5, num_workers=0)
 
