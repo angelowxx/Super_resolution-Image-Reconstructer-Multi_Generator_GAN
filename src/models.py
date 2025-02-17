@@ -100,6 +100,7 @@ class ImageFingerPrint(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(num_filters * (clip_width//32) * (clip_height//32), num_filters * (clip_width//32)),
             nn.BatchNorm1d(num_filters * (clip_width//32)),
+            nn.Sigmoid()
         )
 
     def forward(self, x):
