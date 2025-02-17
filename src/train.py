@@ -75,6 +75,11 @@ def train_example(rank, world_size, num_epochs, num_models):
     sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=world_size, rank=rank)
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=10, sampler=sampler, num_workers=0)
 
+    if dist.get_rank() == 0:
+        image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
+        val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
+        val_loader = torch.utils.data.DataLoader(train_data, batch_size=10, num_workers=0)
+
     avg_losses = []
 
     for epoch in range(num_epochs):
@@ -104,7 +109,7 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
-            validate(model[0], train_loader, device, epoch, num_models, desc)
+            validate(model[-1], val_loader, device, epoch, num_models, desc)
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
