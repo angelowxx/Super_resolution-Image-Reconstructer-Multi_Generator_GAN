@@ -53,20 +53,19 @@ def train_example(rank, world_size, num_epochs, num_models):
                  model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator)
 
-    scheduler = optim.lr_scheduler.CosineAnnealingLR
+    scheduler = optim.lr_scheduler.StepLR
 
     d_lr_scheduler = scheduler(
         optimizer=d_optimizer,
-        T_max=num_epochs,
-        eta_min=lr_discriminator/100,
-
+        step_size=5,
+        gamma=0.65
     )
     g_lr_schedulers = []
     for optimizer in optimizers:
         lr_scheduler = scheduler(
             optimizer=optimizer,
-            T_max=num_epochs,
-            eta_min=lr_generator/100
+            step_size=5,
+            gamma=0.65
         )
         g_lr_schedulers.append(lr_scheduler)
 
@@ -174,22 +173,16 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
 
-    g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
-
-    if is_pretraining:
+    if model_idx == 0:
+        generator.load_state_dict(better_model.state_dict())
+        g_loss = torch.tensor(gen_losses[-1])
+    else:
+        g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
+        if not is_pretraining:
+            g_loss = g_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
         g_optimizer.zero_grad()
         g_loss.backward()
         g_optimizer.step()
-
-    else:
-        if model_idx == 0:
-            generator.load_state_dict(better_model.state_dict())
-            g_loss = torch.tensor(gen_losses[-1])
-        else:
-            g_loss = g_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
-            g_optimizer.zero_grad()
-            g_loss.backward()
-            g_optimizer.step()
 
     generator.eval()
 
