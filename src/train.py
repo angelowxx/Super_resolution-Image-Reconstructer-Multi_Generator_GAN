@@ -79,7 +79,7 @@ def train_example(rank, world_size, num_epochs, num_models):
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
         avg_loss = train_one_epoch(model[0:1], discriminator, train_loader, optimizer, d_optimizer, g_criterion,
-                                   d_criterion, device, epoch, num_epochs//2, gen_losses, True)
+                                   d_criterion, device, epoch, num_epochs//4, gen_losses, True)
         avg_losses.append(avg_loss)
 
         d_lr_scheduler.step()
