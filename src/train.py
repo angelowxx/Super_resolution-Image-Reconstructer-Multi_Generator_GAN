@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 import torch.nn.functional as F
 
 nums_model = 3  # 生成模型池大小
-nums_epoch = 50
+nums_epoch = 100
 
 
 def train_example(rank, world_size, num_epochs, num_models):
@@ -100,13 +100,13 @@ def train_example(rank, world_size, num_epochs, num_models):
     for generator in model[1:]:
         generator.load_state_dict(model[0].state_dict())
 
-    for epoch in range(num_epochs):
+    for epoch in range(num_epochs//2):
         sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, g_criterion,
-                                   d_criterion, device, epoch, num_epochs, gen_losses, False)
+                                   d_criterion, device, epoch, num_epochs//2, gen_losses, False)
         avg_losses.append(avg_loss)
 
         # 将模型按照对比损失，从小到大排列
