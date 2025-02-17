@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 import torch.nn.functional as F
 
 nums_model = 3  # 生成模型池大小
-nums_epoch = 5
+nums_epoch = 100
 proportion_GAN = 2
 
 
@@ -134,8 +134,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         description = "Training"
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if batch_idx == 10:
-            break
+
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
