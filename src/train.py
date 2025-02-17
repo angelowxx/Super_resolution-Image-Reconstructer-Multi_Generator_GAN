@@ -251,7 +251,7 @@ def validate(model, val_loader, device, epoch, num_models, desc):
             # 获取原图的尺寸 (高度, 宽度)
             target_size = hr_imgs[i].unsqueeze(0).shape[-2:]
             # 对低质量图像进行上采样，使其尺寸与 hr_imgs[i] 相同
-            lr_up = F.interpolate(lr_imgs[i].unsqueeze(0), size=target_size, mode='bilinear',
+            lr_up = F.interpolate(lr_imgs[i].unsqueeze(0), size=target_size, mode='nearest',
                                   align_corners=False).squeeze(0)
             comp = torch.cat((lr_up, sr_imgs[i], hr_imgs[i]), dim=2)
             comp_list.append(comp)
