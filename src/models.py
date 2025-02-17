@@ -96,7 +96,7 @@ class ImageFingerPrint(nn.Module):
 
         # 全连接层
         self.classifier = nn.Sequential(
-            nn.Linear(num_filters * (clip_width//64) * (clip_height//64), num_filters * (clip_width//64)),
+            nn.Linear(num_filters * (clip_width//64) * (clip_height//64), num_filters * (clip_width//16)),
             nn.Tanh()
         )
 
