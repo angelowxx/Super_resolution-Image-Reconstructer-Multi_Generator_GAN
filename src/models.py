@@ -100,13 +100,13 @@ class ImageFingerPrint(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(num_filters * (clip_width//32) * (clip_height//32), num_filters * (clip_width//32)),
             nn.BatchNorm1d(num_filters * (clip_width//32)),
-            nn.Sigmoid()
         )
 
     def forward(self, x):
         x = self.model(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)  # 通过全连接层
+        x = x / (x.norm(p=2, dim=1, keepdim=True) + 1e-6)  # 避免除零
         return x
 
 
