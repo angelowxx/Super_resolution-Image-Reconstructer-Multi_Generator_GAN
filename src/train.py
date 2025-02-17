@@ -73,7 +73,7 @@ def train_example(rank, world_size, num_epochs, num_models):
 
     avg_losses = []
 
-    for epoch in range(num_epochs//2):
+    for epoch in range(num_epochs//4):
         sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
@@ -93,8 +93,6 @@ def train_example(rank, world_size, num_epochs, num_models):
         if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
             validate(model[0], train_loader, device, epoch, num_models, "Pre")
 
-        if avg_loss < 0.03:
-            break
     optimizer = [optim.Adam(generator.parameters(), lr=(lr_generator + random.uniform(-5e-5, 5e-5)) / 100) for generator in
                  model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator / 100)
