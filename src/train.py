@@ -21,6 +21,7 @@ import torch.nn.functional as F
 
 nums_model = 3  # 生成模型池大小
 nums_epoch = 5
+proportion_GAN = 2
 
 
 def train_example(rank, world_size, num_epochs, num_models):
@@ -75,25 +76,27 @@ def train_example(rank, world_size, num_epochs, num_models):
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=10, sampler=sampler, num_workers=0)
 
     avg_losses = []
-    is_pretraining = True
-    desc = "Pre"
 
     for epoch in range(num_epochs):
         sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
 
-        if epoch == num_epochs / 2:
-            desc = "Post"
-            is_pretraining = False
+        if epoch % proportion_GAN == 0:
+            desc = "GAN"
+            is_GAN = False
+        else:
+            desc = "COM"
+            is_GAN = True
 
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
         avg_loss = train_one_epoch(model, discriminator, train_loader, optimizers, d_optimizer, g_criterion,
-                                   d_criterion, device, epoch, num_epochs, gen_losses, is_pretraining)
+                                   d_criterion, device, epoch, num_epochs, gen_losses, is_GAN)
         avg_losses.append(avg_loss)
 
         d_lr_scheduler.step()
-        for lr_scheduler in g_lr_schedulers:
+
+        for lr_scheduler in g_lr_schedulers[1:]:
             lr_scheduler.step()
 
         # 将模型按照对比损失，从小到大排列
@@ -123,15 +126,15 @@ def train_example(rank, world_size, num_epochs, num_models):
 
 
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
-                    , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses, is_pretraining):
+                    , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses, is_GAN):
     total_loss = 0
-    if is_pretraining:
+    if is_GAN:
         description = "Pre_Training"
     else:
         description = "Training"
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if batch_idx==10:
+        if batch_idx == 10:
             break
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
@@ -147,7 +150,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
             g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
                                               g_criterion, d_criterion, optimizer,
-                                              d_optimizer, i, better_model, gen_losses, is_pretraining)
+                                              d_optimizer, i, better_model, gen_losses, is_GAN)
 
             if i == len(model) - 1:
                 first_loss = g_loss
@@ -168,7 +171,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
                     g_criterion, d_criterion, g_optimizer,
-                    d_optimizer, model_idx, better_model, gen_losses, is_pretraining):
+                    d_optimizer, model_idx, better_model, gen_losses, is_GAN):
     torch.autograd.set_detect_anomaly(True)
     # --- Train Generator ---
     generator.train()
@@ -180,7 +183,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
         g_loss = torch.tensor(gen_losses[-1])
     else:
         g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
-        if not is_pretraining:
+        if not is_GAN:
             g_loss = g_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
         g_optimizer.zero_grad()
         g_loss.backward()
