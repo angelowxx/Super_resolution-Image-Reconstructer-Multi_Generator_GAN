@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_model = 3  # 生成模型池大小
+nums_model = 1  # 生成模型池大小
 nums_epoch = 100
 
 
@@ -166,20 +166,16 @@ def train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
     # --- Train Generator ---
     generator.train()
 
-    if model_idx == 0:
-        generator.load_state_dict(better_model.state_dict())
-        g_loss = torch.tensor(gen_losses[-1])
-    else:
-        sr_images = generator(lr_imgs)
+    sr_images = generator(lr_imgs)
 
-        fake_preds = image_finger_print(sr_images)
-        real_preds = image_finger_print(hr_imgs)
+    fake_preds = image_finger_print(sr_images)
+    real_preds = image_finger_print(hr_imgs)
 
-        g_loss = g_criterion(fake_preds, real_preds)  # 高维比对
+    g_loss = g_criterion(fake_preds, real_preds)  # 高维比对
 
-        g_optimizer.zero_grad()
-        g_loss.backward()
-        g_optimizer.step()
+    g_optimizer.zero_grad()
+    g_loss.backward()
+    g_optimizer.step()
 
     generator.eval()
 
