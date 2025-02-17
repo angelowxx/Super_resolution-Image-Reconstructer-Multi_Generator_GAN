@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 import torch.nn.functional as F
 
 nums_model = 3  # 生成模型池大小
-nums_epoch = 50
+nums_epoch = 2
 
 
 def train_example(rank, world_size, num_epochs, num_models):
@@ -49,7 +49,7 @@ def train_example(rank, world_size, num_epochs, num_models):
     model = [nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
              for _ in range(num_models)]
 
-    optimizer = [optim.Adam(generator.parameters(), lr=lr_generator + random.uniform(-5e-5, 5e-5)) for generator in
+    optimizers = [optim.Adam(generator.parameters(), lr=lr_generator + random.uniform(-1e-5, 1e-5)) for generator in
                  model]
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator)
 
@@ -58,12 +58,15 @@ def train_example(rank, world_size, num_epochs, num_models):
     d_lr_scheduler = scheduler(
         optimizer=d_optimizer,
         T_max=num_epochs,
+        eta_min=lr_discriminator/100,
+
     )
     g_lr_schedulers = []
-    for generator in model:
+    for optimizer in optimizers:
         lr_scheduler = scheduler(
-            optimizer=d_optimizer,
+            optimizer=optimizer,
             T_max=num_epochs,
+            eta_min=lr_generator/100
         )
         g_lr_schedulers.append(lr_scheduler)
 
@@ -73,14 +76,21 @@ def train_example(rank, world_size, num_epochs, num_models):
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=10, sampler=sampler, num_workers=0)
 
     avg_losses = []
+    is_pretraining = True
+    desc = "Pre"
 
     for epoch in range(num_epochs):
         sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
+
+        if epoch == num_epochs/2:
+            desc = "Post"
+            is_pretraining = False
+
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         gen_losses = [0 for i in range(len(model))]
-        avg_loss = train_one_epoch(model[0:1], discriminator, train_loader, optimizer, d_optimizer, g_criterion,
-                                   d_criterion, device, epoch, num_epochs, gen_losses, True)
+        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizers, d_optimizer, g_criterion,
+                                   d_criterion, device, epoch, num_epochs, gen_losses, is_pretraining)
         avg_losses.append(avg_loss)
 
         d_lr_scheduler.step()
@@ -92,30 +102,7 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
-            validate(model[0], train_loader, device, epoch, num_models, "Pre")
-
-    optimizer = [optim.Adam(model[i].parameters(), lr=(lr_generator + 1e-5 * i) / 100) for i in
-                 range(len(model))]
-    d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_discriminator / 100)
-
-    for generator in model[1:]:
-        generator.load_state_dict(model[0].state_dict())
-
-    for epoch in range(num_epochs):
-        sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
-        # if epoch > -1:
-        #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
-        gen_losses = [0 for i in range(len(model))]
-        avg_loss = train_one_epoch(model, discriminator, train_loader, optimizer, d_optimizer, g_criterion,
-                                   d_criterion, device, epoch, num_epochs, gen_losses, False)
-        avg_losses.append(avg_loss)
-
-        # 将模型按照对比损失，从小到大排列
-        shuffle_lists_in_same_order(model, optimizer, gen_losses)
-
-        # 验证：每个epoch结束后随机取一个batch验证效果
-        if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
-            validate(model[-1], train_loader, device, epoch, num_models, "Post")
+            validate(model[0], train_loader, device, epoch, num_models, desc)
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
