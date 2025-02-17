@@ -37,7 +37,7 @@ class AddGaussianNoise:
 
 
 class AddSaltPepperSpots:
-    def __init__(self, salt_prob=0.001, pepper_prob=0.001, spot_size=10):
+    def __init__(self, salt_prob=0.001, pepper_prob=0.001, spot_size=1):
         """
         salt_prob: Probability of adding 'salt' (white) spots
         pepper_prob: Probability of adding 'pepper' (black) spots
@@ -65,12 +65,12 @@ class AddSaltPepperSpots:
         num_salt_spots = int(height * width * self.salt_prob)  # Number of salt spots
         num_pepper_spots = int(height * width * self.pepper_prob)  # Number of pepper spots
 
-        """# Add salt (white) spots
+        # Add salt (white) spots
         for _ in range(num_salt_spots):
             spot_size = random.randint(1, self.spot_size)
             x = random.randint(0, width - 1)
             y = random.randint(0, height - 1)
-            img_noisy[:, y:y + spot_size, x:x + spot_size] = 1.0  # Salt is white"""
+            img_noisy[:, y:y + spot_size, x:x + spot_size] = 1.0  # Salt is white
 
         # Add pepper (black) spots
         for _ in range(num_pepper_spots):
@@ -86,7 +86,7 @@ downward_img_quality = transforms.Compose([
     transforms.Resize((clip_height // 4, clip_width // 4)),
     # transforms.Resize((clip_height, clip_width)),
     transforms.ToTensor(),
-    AddGaussianNoise(),
+    transforms.Lambda(lambda x: x + torch.randn_like(x) * 0.05),
     AddSaltPepperSpots()
 ])
 
