@@ -97,13 +97,13 @@ class Discriminator(nn.Module):
         )
 
         # 自适应池化，固定输出尺寸，例如 (4, 4)
-        self.global_pool = nn.AdaptiveAvgPool2d((4, 4))
+        self.global_pool = nn.AdaptiveAvgPool2d((8, 8))
 
         # 全连接层
         self.classifier = nn.Sequential(
             nn.Flatten(),
 
-            nn.Linear(num_filters * 4 * 4, num_filters),
+            nn.Linear(num_filters * 8 * 8, num_filters),
             nn.BatchNorm1d(num_filters),
             nn.LeakyReLU(0.2),
 
