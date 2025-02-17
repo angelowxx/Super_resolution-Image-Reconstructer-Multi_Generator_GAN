@@ -188,7 +188,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     else:
         g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
         if not is_GAN:
-            g_loss = g_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
+            g_loss = 10 * g_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
         g_optimizer.zero_grad()
         g_loss.backward()
         g_optimizer.step()
