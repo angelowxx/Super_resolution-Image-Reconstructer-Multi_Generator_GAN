@@ -38,46 +38,34 @@ class AddGaussianNoise:
 
 class AddSaltPepperSpots:
     def __init__(self, salt_prob=0.001, pepper_prob=0.001, spot_size=1):
-        """
-        salt_prob: Probability of adding 'salt' (white) spots
-        pepper_prob: Probability of adding 'pepper' (black) spots
-        spot_size: The size of the spots (length of square region in pixels)
-        """
         self.salt_prob = salt_prob
         self.pepper_prob = pepper_prob
         self.spot_size = spot_size
 
     def __call__(self, img):
-        """
-        Adds salt-and-pepper spots to a tensor image.
-        Args:
-            img (Tensor): Image tensor of shape (C, H, W) with values in [0, 1].
-        Returns:
-            Tensor: Noisy image.
-        """
         if not isinstance(img, torch.Tensor):
             raise TypeError("Input img should be a PyTorch tensor")
 
-        # Create a copy of the image
         img_noisy = img.clone()
+        _, height, width = img.shape
 
-        _, height, width = img.shape  # Get image dimensions
-        num_salt_spots = int(height * width * self.salt_prob)  # Number of salt spots
-        num_pepper_spots = int(height * width * self.pepper_prob)  # Number of pepper spots
+        num_pixels = height * width
+        num_salt_spots = int(num_pixels * self.salt_prob)
+        num_pepper_spots = int(num_pixels * self.pepper_prob)
 
-        # Add salt (white) spots
-        for _ in range(num_salt_spots):
-            spot_size = random.randint(1, self.spot_size)
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
-            img_noisy[:, y:y + spot_size, x:x + spot_size] = 1.0  # Salt is white
+        # Generate all random top-left coordinates for salt spots
+        xs_salt = torch.randint(0, width - self.spot_size + 1, (num_salt_spots,))
+        ys_salt = torch.randint(0, height - self.spot_size + 1, (num_salt_spots,))
 
-        # Add pepper (black) spots
-        for _ in range(num_pepper_spots):
-            spot_size = random.randint(1, self.spot_size)
-            x = random.randint(0, width - 1)
-            y = random.randint(0, height - 1)
-            img_noisy[:, y:y + spot_size, x:x + spot_size] = 0.0  # Pepper is black
+        for x, y in zip(xs_salt, ys_salt):
+            img_noisy[:, y:y + self.spot_size, x:x + self.spot_size] = 1.0
+
+        # Generate all random top-left coordinates for pepper spots
+        xs_pepper = torch.randint(0, width - self.spot_size + 1, (num_pepper_spots,))
+        ys_pepper = torch.randint(0, height - self.spot_size + 1, (num_pepper_spots,))
+
+        for x, y in zip(xs_pepper, ys_pepper):
+            img_noisy[:, y:y + self.spot_size, x:x + self.spot_size] = 0.0
 
         return img_noisy
 
