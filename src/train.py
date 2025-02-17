@@ -133,6 +133,8 @@ def train_example(rank, world_size, num_epochs, num_models):
 def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
                     , g_criterion, d_criterion, device, epoch, num_epochs, gen_losses, is_GAN):
     total_loss = 0
+    interpolate_models(model[0], model[-1], alpha=0.2)
+
     if is_GAN:
         description = "Pre_Training"
     else:
@@ -144,7 +146,6 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
         lr_imgs = lr_imgs.to(device)
 
         first_loss = 0
-        better_model = model[-1]
 
         d_loss = train_discriminator(model[-1], discriminator, lr_imgs, hr_imgs, d_criterion, d_optimizer)
 
@@ -153,8 +154,7 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
             optimizer = g_optimizer[i]
 
             g_loss, sr_imgs = train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                                              g_criterion, d_criterion, optimizer,
-                                              d_optimizer, i, better_model, gen_losses, is_GAN)
+                                              g_criterion, d_criterion, optimizer, is_GAN)
 
             if i == len(model) - 1:
                 first_loss = g_loss
@@ -174,16 +174,12 @@ def train_one_epoch(model, discriminator, train_loader, g_optimizer, d_optimizer
 
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs,
-                    g_criterion, d_criterion, g_optimizer,
-                    d_optimizer, model_idx, better_model, gen_losses, is_GAN):
+                    g_criterion, d_criterion, g_optimizer,is_GAN):
     torch.autograd.set_detect_anomaly(True)
     # --- Train Generator ---
     generator.train()
     sr_images = generator(lr_imgs)
     fake_preds = discriminator(sr_images)
-
-    if model_idx == 0:
-        interpolate_models(generator, better_model, alpha=0.2)
 
     g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
     if not is_GAN:
