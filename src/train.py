@@ -183,15 +183,14 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs,
     fake_preds = discriminator(sr_images)
 
     if model_idx == 0:
-        generator.load_state_dict(better_model.state_dict())
-        g_loss = torch.tensor(gen_losses[-1])
-    else:
-        g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
-        if not is_GAN:
-            g_loss = 10 * g_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
-        g_optimizer.zero_grad()
-        g_loss.backward()
-        g_optimizer.step()
+        interpolate_models(generator, better_model, alpha=0.2)
+
+    g_loss = g_criterion(sr_images, hr_imgs)  # 后期改成高维比对
+    if not is_GAN:
+        g_loss = 10 * g_loss + d_criterion(fake_preds, torch.ones_like(fake_preds))
+    g_optimizer.zero_grad()
+    g_loss.backward()
+    g_optimizer.step()
 
     generator.eval()
 
