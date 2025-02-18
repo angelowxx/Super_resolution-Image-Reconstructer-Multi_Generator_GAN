@@ -102,11 +102,11 @@ def uniformity_loss(embeddings, t=2):
 def calculate_psnr(img1, img2):
     img1_np = np.array(img1.cpu(), dtype=np.float32)
     img2_np = np.array(img2.cpu(), dtype=np.float32)
-    return psnr(img1_np, img2_np, data_range=255)  # 255 是最大像素值
+    return psnr(img1_np, img2_np, data_range=1)  # 255 是最大像素值
 
 # 计算 SSIM
 def calculate_ssim(img1, img2):
     img1_np = np.array(img1.cpu(), dtype=np.float32)
     img2_np = np.array(img2.cpu(), dtype=np.float32)
-    return ssim(img1_np, img2_np, data_range=255, multichannel=True, win_size=3)
+    return ssim(img1_np, img2_np, data_range=1, multichannel=True, win_size=3)
 
