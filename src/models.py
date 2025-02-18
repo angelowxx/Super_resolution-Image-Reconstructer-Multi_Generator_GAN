@@ -69,7 +69,7 @@ class SRResNet(nn.Module):
 
 
 class ImageFingerPrint(nn.Module):
-    def __init__(self, input_channels=3,  num_filters=32):
+    def __init__(self, input_channels=3,  num_filters=64):
         super(ImageFingerPrint, self).__init__()
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
@@ -81,19 +81,17 @@ class ImageFingerPrint(nn.Module):
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=3, stride=2, padding=1),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
-
-            nn.Conv2d(num_filters * 8, num_filters * 16, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
         )
 
         # 全连接层
         self.classifier = nn.Sequential(
-            nn.Linear(num_filters * 16 * (clip_width//32) * (clip_height//32), clip_width * (clip_height//32)),
+            nn.Linear(num_filters * 8 * (clip_width//32) * (clip_height//32), clip_width * (clip_height//128)),
             nn.Tanh(),
 
         )
