@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 100
+nums_epoch = 20
 
 
 def train_example(rank, world_size, num_epochs):
@@ -55,12 +55,12 @@ def train_example(rank, world_size, num_epochs):
     d_lr_scheduler = scheduler(
         optimizer=d_optimizer,
         step_size=5,
-        gamma=0.65
+        gamma=0.5
     )
     lr_scheduler = scheduler(
         optimizer=g_optimizer,
         step_size=5,
-        gamma=0.65
+        gamma=0.5
     )
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
@@ -89,7 +89,7 @@ def train_example(rank, world_size, num_epochs):
         lr_scheduler.step()
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
+        if (epoch + 1) % 2 == 0 and dist.get_rank() == 0:
             validate(generator, val_loader, device, epoch, "fingerprint")
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
