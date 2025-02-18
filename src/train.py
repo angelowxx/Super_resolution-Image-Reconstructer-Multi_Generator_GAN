@@ -68,7 +68,7 @@ def train_example(rank, world_size, num_epochs):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.01
+    split_ratio = 0.1
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -106,8 +106,6 @@ def train_example(rank, world_size, num_epochs):
         psnrs.append(psnr/30)
         ssims.append(ssim)
 
-    dist.destroy_process_group()  # 训练结束后销毁进程组
-
     # Save the generator model's state_dict
     torch.save(generator.state_dict(), os.path.join(f'results', f'generator_model_{dist.get_rank()}.pth'))
     # Plotting the loss curve
@@ -122,6 +120,8 @@ def train_example(rank, world_size, num_epochs):
 
     # Save the plot as an image file in the 'results' directory
     plt.savefig(os.path.join(f'results', f'training_loss_curve_{dist.get_rank()}.png'))
+
+    dist.destroy_process_group()  # 训练结束后销毁进程组
 
 
 def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_optimizer
