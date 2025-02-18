@@ -170,11 +170,12 @@ def train_image_finger_print(image_finger_print, generator, hr_imgs, d_optimizer
     torch.autograd.set_detect_anomaly(True)
     # --- Train image_finger_print ---
     image_finger_print.train()
-    sr_imgs = generator(hr_imgs)
+    with torch.no_grad():
+        sr_imgs = generator(hr_imgs)
 
     # Get image_finger_print predictions
     real_preds = image_finger_print(hr_imgs)
-    fake_preds = image_finger_print(sr_imgs)
+    fake_preds = image_finger_print(sr_imgs.detach())
 
     d_loss = (uniformity_loss(real_preds) + uniformity_loss(fake_preds))/2
 
