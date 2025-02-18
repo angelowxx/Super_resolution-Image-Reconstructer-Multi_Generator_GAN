@@ -50,17 +50,15 @@ def train_example(rank, world_size, num_epochs):
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(image_finger_print.parameters(), lr=lr_image_finger_print)
 
-    scheduler = optim.lr_scheduler.StepLR
+    scheduler = optim.lr_scheduler.CosineAnnealingLR
 
     d_lr_scheduler = scheduler(
         optimizer=d_optimizer,
-        step_size=5,
-        gamma=0.5
+        T_max=num_epochs
     )
     lr_scheduler = scheduler(
         optimizer=g_optimizer,
-        step_size=5,
-        gamma=0.5
+        T_max=num_epochs
     )
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
