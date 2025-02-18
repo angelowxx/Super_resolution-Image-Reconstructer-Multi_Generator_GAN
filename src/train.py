@@ -8,7 +8,7 @@ import torch
 import torch.optim as optim
 from matplotlib import pyplot as plt
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, DistributedSampler, random_split
 from tqdm import tqdm
 
 from src.models import SRResNet, ImageFingerPrint, PerceptualLoss
@@ -61,22 +61,34 @@ def train_example(rank, world_size, num_epochs):
         T_max=num_epochs
     )
 
+    # Define paths
     train_folder_path = os.path.join(os.getcwd(), 'data', 'train')
-    train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
-    sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=world_size, rank=rank)
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=8, sampler=sampler, num_workers=0)
 
-    val_folder_path = os.path.join(os.getcwd(), 'data', 'val')
-    val_data = ImageDatasetWithTransforms(val_folder_path, normalize_img_size, downward_img_quality)
-    sampler_val = torch.utils.data.distributed.DistributedSampler(val_data, num_replicas=world_size, rank=rank)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=8, sampler=sampler_val, num_workers=0)
+    # Load full dataset
+    train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
+
+    # Define split sizes (e.g., 70% train, 30% validation)
+    split_ratio = 0.01
+    train_size = int(split_ratio * len(train_data))
+    val_size = len(train_data) - train_size
+
+    # Split dataset into two parts
+    train_subset, val_subset = random_split(train_data, [train_size, val_size])
+
+    # Create samplers
+    train_sampler = DistributedSampler(train_subset, num_replicas=world_size, rank=rank)
+    val_sampler = DistributedSampler(val_subset, num_replicas=world_size, rank=rank)
+
+    # Create DataLoaders
+    train_loader = DataLoader(train_subset, batch_size=8, sampler=train_sampler, num_workers=0)
+    val_loader = DataLoader(val_subset, batch_size=8, sampler=val_sampler, num_workers=0)
 
     psnrs = []
     ssims = []
 
     for epoch in range(num_epochs):
-        sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
-        sampler_val.set_epoch(epoch)
+        train_sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
+        val_sampler.set_epoch(epoch)
 
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
@@ -88,9 +100,9 @@ def train_example(rank, world_size, num_epochs):
         lr_scheduler.step()
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        validate(generator, val_loader, device, epoch, "fingerprint", dist.get_rank())
+        validate(generator, train_loader, device, epoch, "fingerprint", dist.get_rank())
 
-        psnr, ssim = compute_score(generator, val_loader, device)
+        psnr, ssim = compute_score(generator, train_loader, device)
         psnrs.append(psnr/30)
         ssims.append(ssim)
 
