@@ -180,7 +180,8 @@ def train_generator(generator, image_finger_print, discriminator, lr_imgs, hr_im
 
     # g_loss = g_criterion(fake_prints, real_prints) + g_criterion(sr_images, hr_imgs) + torch.mean(real_preds-fake_preds)
     # g_loss = torch.mean(real_preds-fake_preds)
-    g_loss = g_criterion(fake_prints, real_prints)
+    # g_loss = g_criterion(fake_prints, real_prints)
+    g_loss = g_criterion(sr_images, hr_imgs)
 
     g_optimizer.zero_grad()
     g_loss.backward()
