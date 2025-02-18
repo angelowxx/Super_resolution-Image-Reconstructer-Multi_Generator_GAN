@@ -69,33 +69,33 @@ class SRResNet(nn.Module):
 
 
 class ImageFingerPrint(nn.Module):
-    def __init__(self, input_channels=3,  num_filters=64):
+    def __init__(self, input_channels=3, num_filters=64):
         super(ImageFingerPrint, self).__init__()
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
             nn.Conv2d(input_channels, num_filters, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(num_filters, num_filters, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(num_filters, num_filters * 2, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(num_filters * 2, num_filters * 2, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(num_filters * 4, num_filters * 4, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
 
         )
 
         # 全连接层
         self.classifier = nn.Sequential(
-            nn.Linear(num_filters * 4 * (clip_width//64) * (clip_height//64), clip_width * (clip_height//128)),
+            nn.Linear(num_filters * 4 * (clip_width // 64) * (clip_height // 64), clip_width * (clip_height // 128)),
             nn.Tanh(),
 
         )
@@ -108,24 +108,37 @@ class ImageFingerPrint(nn.Module):
         return x
 
 
-class PerceptualLoss(nn.Module):
-    def __init__(self, model_type='vgg16', layer_index=5, device='cpu'):
-        super(PerceptualLoss, self).__init__()
-        self.device = device
-        if model_type == 'vgg19':
-            vgg = models.vgg19(weights=models.VGG19_Weights.IMAGENET1K_V1).features  # 预训练模型
-        elif model_type == 'vgg16':
-            vgg = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1).features  # 预训练模型
-        else:
-            raise ValueError("Only 'vgg19' and 'vgg16' are supported.")
+class Discriminator(nn.Module):
+    def __init__(self, input_channels=3, num_filters=64):
+        super(Discriminator, self).__init__()
+        self.model = nn.Sequential(
+            # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
+            nn.Conv2d(input_channels, num_filters, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(num_filters),
+            nn.LeakyReLU(0.2, inplace=True),
 
-        self.feature_extractor = nn.Sequential(*list(vgg[:layer_index])).to(self.device)  # 提取前 layer_index 层
-        for param in self.feature_extractor.parameters():
-            param.requires_grad = False  # 冻结权重，不参与训练
+            nn.Conv2d(num_filters, num_filters, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(num_filters),
+            nn.LeakyReLU(0.2, inplace=True),
 
-    def forward(self, sr_image, hr_image):
-        sr_features = self.feature_extractor(sr_image)
-        hr_features = self.feature_extractor(hr_image)
-        # 计算混合损失
-        loss = nn.functional.mse_loss(sr_features, hr_features) + nn.functional.l1_loss(sr_image, hr_image)
-        return loss
+            nn.Conv2d(num_filters, num_filters * 2, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(num_filters * 2),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(num_filters * 4),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(num_filters * 8),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            nn.Conv2d(num_filters * 8, num_filters, kernel_size=3, stride=2, padding=1),
+            nn.BatchNorm2d(num_filters),
+            nn.LeakyReLU(0.2, inplace=True),
+
+        )
+
+    def forward(self, x):
+        x = self.model(x)
+        return x
