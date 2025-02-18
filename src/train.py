@@ -64,12 +64,12 @@ def train_example(rank, world_size, num_epochs):
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
     sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=world_size, rank=rank)
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=10, sampler=sampler, num_workers=0)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=8, sampler=sampler, num_workers=0)
 
     if dist.get_rank() == 0:
         image_folder_path = os.path.join(os.getcwd(), 'data', 'val')
         val_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
-        val_loader = torch.utils.data.DataLoader(val_data, batch_size=10, num_workers=0)
+        val_loader = torch.utils.data.DataLoader(val_data, batch_size=8, num_workers=0)
 
     avg_losses = []
 
@@ -87,7 +87,7 @@ def train_example(rank, world_size, num_epochs):
         lr_scheduler.step()
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        if (epoch + 1) % 2 == 0 and dist.get_rank() == 0:
+        if dist.get_rank() == 0:
             validate(generator, val_loader, device, epoch, "fingerprint")
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
