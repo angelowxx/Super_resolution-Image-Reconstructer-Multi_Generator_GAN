@@ -64,12 +64,12 @@ def train_example(rank, world_size, num_epochs):
     train_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
     sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=world_size, rank=rank)
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=2, sampler=sampler, num_workers=0)
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=12, sampler=sampler, num_workers=0)
 
     val_folder_path = os.path.join(os.getcwd(), 'data', 'val')
     val_data = ImageDatasetWithTransforms(val_folder_path, normalize_img_size, downward_img_quality)
     sampler_val = torch.utils.data.distributed.DistributedSampler(val_data, num_replicas=world_size, rank=rank)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=2, sampler=sampler_val, num_workers=0)
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=12, sampler=sampler_val, num_workers=0)
 
     psnrs = []
     ssims = []
