@@ -74,27 +74,22 @@ class ImageFingerPrint(nn.Module):
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
             nn.Conv2d(input_channels, num_filters, kernel_size=3, stride=2, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
-            # Hidden layers: progressively downsample
             nn.Conv2d(num_filters, num_filters * 4, kernel_size=3, stride=2, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=3, stride=2, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 8, num_filters * 16, kernel_size=3, stride=2, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
         )
 
         # 全连接层
         self.classifier = nn.Sequential(
-            nn.Linear(num_filters * 16 * (clip_width//256) * (clip_height//256), clip_width * (clip_height//128)),
+            nn.Linear(num_filters * 16 * (clip_width//16) * (clip_height//16), clip_width * (clip_height//128)),
             nn.Tanh(),
 
         )
