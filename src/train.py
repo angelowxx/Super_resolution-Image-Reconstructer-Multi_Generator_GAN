@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 15
+nums_epoch = 5
 
 
 def train_example(rank, world_size, num_epochs):
@@ -71,7 +71,8 @@ def train_example(rank, world_size, num_epochs):
     sampler_val = torch.utils.data.distributed.DistributedSampler(val_data, num_replicas=world_size, rank=rank)
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=12, sampler=sampler_val, num_workers=0)
 
-    avg_losses = []
+    psnrs = []
+    ssims = []
 
     for epoch in range(num_epochs):
         sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
@@ -81,7 +82,6 @@ def train_example(rank, world_size, num_epochs):
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         avg_loss = train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_optimizer
                                    , g_criterion, device, epoch, num_epochs)
-        avg_losses.append(avg_loss)
 
         d_lr_scheduler.step()
 
@@ -90,23 +90,26 @@ def train_example(rank, world_size, num_epochs):
         # 验证：每个epoch结束后随机取一个batch验证效果
         validate(generator, val_loader, device, epoch, "fingerprint", dist.get_rank())
 
-        compute_score(generator, val_loader, device)
+        psnr, ssim = compute_score(generator, val_loader, device)
+        psnrs.append(psnr/30)
+        ssims.append(ssim)
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
     # Save the generator model's state_dict
-    torch.save(generator.state_dict(), os.path.join(f'results', f'generator_model.pth'))
+    torch.save(generator.state_dict(), os.path.join(f'results', f'generator_model_{dist.get_rank()}.pth'))
     # Plotting the loss curve
     plt.figure(figsize=(10, 6))
-    plt.plot(range(1, num_epochs + 1), avg_losses, marker='o', linestyle='-', color='b', label='Training Loss')
-    plt.title('Training Loss Curve')
+    plt.plot(range(1, num_epochs + 1), psnrs, marker='o', linestyle='-', color='b', label='PNSR/30')
+    plt.plot(range(1, num_epochs + 1), ssims, marker='o', linestyle='--', color='r', label='SSIM')
+    plt.title('Rating Curve')
     plt.xlabel('Epoch')
-    plt.ylabel('Average Loss')
+    plt.ylabel('Rating Value')
     plt.legend()
     plt.grid(True)
 
     # Save the plot as an image file in the 'results' directory
-    plt.savefig(os.path.join(f'results', 'training_loss_curve.png'))
+    plt.savefig(os.path.join(f'results', f'training_loss_curve_{dist.get_rank()}.png'))
 
 
 def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_optimizer
@@ -116,10 +119,13 @@ def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
 
+        if batch_idx == 2:
+            break
+
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        d_loss = train_image_finger_print(image_finger_print, hr_imgs, d_optimizer)
+        d_loss = train_image_finger_print(image_finger_print, generator, hr_imgs, d_optimizer)
 
         g_loss = train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
                                  g_criterion, g_optimizer)
@@ -160,15 +166,19 @@ def train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
     return loss_item
 
 
-def train_image_finger_print(image_finger_print, hr_imgs, d_optimizer):
+def train_image_finger_print(image_finger_print, generator, hr_imgs, d_optimizer):
     torch.autograd.set_detect_anomaly(True)
     # --- Train image_finger_print ---
     image_finger_print.train()
+    generator.train()  # to force the generator enhance different images with larger distances in hi-dimensional space
+
+    sr_imgs = generator(hr_imgs)
 
     # Get image_finger_print predictions
     real_preds = image_finger_print(hr_imgs)
+    fake_preds = image_finger_print(sr_imgs)
 
-    d_loss = uniformity_loss(real_preds)
+    d_loss = (uniformity_loss(real_preds) + uniformity_loss(fake_preds))/2
 
     # Update image_finger_print
     d_optimizer.zero_grad()
@@ -176,6 +186,7 @@ def train_image_finger_print(image_finger_print, hr_imgs, d_optimizer):
     d_optimizer.step()
 
     image_finger_print.eval()
+    generator.eval()
 
     loss_item = d_loss.item()
 
@@ -231,6 +242,8 @@ def compute_score(model, val_loader, device):
         psnr /= hr_imgs.size(0)
         ssim /= hr_imgs.size(0)
         print(f'psnr={psnr}, ssim={ssim}')
+
+    return psnr, ssim
 
 
 
