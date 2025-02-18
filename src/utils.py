@@ -95,7 +95,7 @@ def uniformity_loss(embeddings, t=2):
     # Compute pairwise distances (using pdist, which returns distances for each pair)
     pairwise_dists = torch.pdist(embeddings, p=2)
     # Compute loss: encourages large distances
-    loss = torch.log(torch.mean(torch.exp(-t * pairwise_dists.pow(2))))
+    loss = torch.log(torch.mean(torch.exp(-t * pairwise_dists.pow(2) + 1e-7)))  # Adding small epsilon
     return loss
 
 # 计算 PSNR
