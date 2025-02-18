@@ -180,17 +180,18 @@ def train_image_finger_print(image_finger_print, generator, hr_imgs, d_optimizer
         sr_imgs = generator(hr_imgs)
 
     # Get image_finger_print predictions
-    real_preds = image_finger_print(hr_imgs)
-    fake_preds = image_finger_print(sr_imgs.detach())
+    preds = image_finger_print(sr_imgs.detach())
 
-    d_loss = uniformity_loss(fake_preds)
+    d_loss = uniformity_loss(preds)
 
     # Update image_finger_print
     d_optimizer.zero_grad()
     d_loss.backward()
     d_optimizer.step()
 
-    d_loss = uniformity_loss(real_preds)
+    preds = image_finger_print(hr_imgs)
+
+    d_loss = uniformity_loss(preds)
 
     # Update image_finger_print
     d_optimizer.zero_grad()
