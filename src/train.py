@@ -68,7 +68,7 @@ def train_example(rank, world_size, num_epochs):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.8
+    split_ratio = 0.1
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
