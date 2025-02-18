@@ -68,48 +68,35 @@ class SRResNet(nn.Module):
         return out
 
 
-class ConnectingConv(nn.Module):
-    def __init__(self, input_channels, output_channels, stride=2):
-        super(ConnectingConv, self).__init__()
-        self.conv = nn.Conv2d(input_channels, output_channels-input_channels, kernel_size=3, stride=1, padding=1)
-        self.pool = nn.MaxPool2d(kernel_size=3, stride=stride, padding=1)
-
-    def forward(self, x):
-        x1 = self.conv(x)
-        x = torch.cat([x, x1], dim=1)
-        x = self.pool(x)
-        return x
-
-
 class ImageFingerPrint(nn.Module):
     def __init__(self, input_channels=3,  num_filters=32):
         super(ImageFingerPrint, self).__init__()
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
-            ConnectingConv(input_channels, num_filters),
+            nn.Conv2d(input_channels, num_filters, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
             # Hidden layers: progressively downsample
-            ConnectingConv(num_filters, num_filters*2),
+            nn.Conv2d(num_filters, num_filters * 2, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
-            ConnectingConv(num_filters*2, num_filters*4),
+            nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
-            ConnectingConv(num_filters*4, num_filters*8),
+            nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
-            ConnectingConv(num_filters*8, num_filters*16),
+            nn.Conv2d(num_filters * 8, num_filters * 16, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
-            nn.Conv2d(num_filters*16, num_filters, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(num_filters * 16, num_filters * 32, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
         )
 
         # 全连接层
         self.classifier = nn.Sequential(
-            nn.Linear(num_filters * (clip_width//64) * (clip_height//64), clip_width * (clip_height//256)),
+            nn.Linear(num_filters * 32 * (clip_width//64) * (clip_height//64), clip_width * (clip_height//256)),
             nn.Tanh()
         )
 
