@@ -150,13 +150,7 @@ def train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
     fake_preds = image_finger_print(sr_images)
     real_preds = image_finger_print(hr_imgs)
 
-    g_loss = uniformity_loss(fake_preds)  # 高维比对
-
-    g_optimizer.zero_grad()
-    g_loss.backward()
-    g_optimizer.step()
-
-    g_loss = g_criterion(fake_preds, real_preds)
+    g_loss = uniformity_loss(fake_preds) + g_criterion(fake_preds, real_preds)# 高维比对
 
     g_optimizer.zero_grad()
     g_loss.backward()
@@ -180,18 +174,10 @@ def train_image_finger_print(image_finger_print, generator, hr_imgs, lr_imgs, d_
         sr_imgs = generator(lr_imgs)
 
     # Get image_finger_print predictions
-    preds = image_finger_print(sr_imgs.detach())
+    fake_preds = image_finger_print(sr_imgs.detach())
+    real_preds = image_finger_print(hr_imgs)
 
-    d_loss = uniformity_loss(preds)
-
-    # Update image_finger_print
-    d_optimizer.zero_grad()
-    d_loss.backward()
-    d_optimizer.step()
-
-    preds = image_finger_print(hr_imgs)
-
-    d_loss = uniformity_loss(preds)
+    d_loss = (uniformity_loss(fake_preds) + uniformity_loss(real_preds))/2
 
     # Update image_finger_print
     d_optimizer.zero_grad()
