@@ -114,23 +114,23 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
             nn.Conv2d(input_channels, num_filters, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters),
+            nn.InstanceNorm2d(num_filters),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters, num_filters, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters),
+            nn.InstanceNorm2d(num_filters),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters, num_filters * 2, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters * 2),
+            nn.InstanceNorm2d(num_filters * 2),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters * 4),
+            nn.InstanceNorm2d(num_filters * 4),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(num_filters * 8),
+            nn.InstanceNorm2d(num_filters * 8),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 8, 1, kernel_size=4, stride=2, padding=1),
