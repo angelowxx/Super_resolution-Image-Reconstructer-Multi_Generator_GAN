@@ -169,15 +169,14 @@ def train_generator(generator, image_finger_print, discriminator, lr_imgs, hr_im
     image_finger_print.eval()
     discriminator.eval()
 
-    with torch.no_grad():
-        real_prints = image_finger_print(hr_imgs)
-        real_preds = discriminator(hr_imgs)
 
     sr_images = generator(lr_imgs)
 
     fake_prints = image_finger_print(sr_images)
-
     fake_preds = discriminator(sr_images)
+    with torch.no_grad():
+        real_prints = image_finger_print(hr_imgs)
+        real_preds = discriminator(hr_imgs)
 
     #g_loss = g_criterion(fake_prints, real_prints) + g_criterion(sr_images, hr_imgs) + torch.mean(real_preds-fake_preds)
     g_loss = torch.mean(torch.relu(real_preds-fake_preds))
