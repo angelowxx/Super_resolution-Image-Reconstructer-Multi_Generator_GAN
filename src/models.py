@@ -80,7 +80,7 @@ class ImageFingerPrint(nn.Module):
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters, num_filters * 2, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
+            nn.LeakyReLU(0.2, inplace=True),
 
             nn.Conv2d(num_filters * 2, num_filters * 2, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
