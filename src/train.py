@@ -20,11 +20,10 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_model = 1  # 生成模型池大小
 nums_epoch = 100
 
 
-def train_example(rank, world_size, num_epochs, num_models):
+def train_example(rank, world_size, num_epochs):
     # 初始化进程组
     os.environ['MASTER_ADDR'] = '127.0.0.1'
     os.environ['MASTER_PORT'] = '12355'  # 选择一个未被占用的端口
@@ -35,7 +34,7 @@ def train_example(rank, world_size, num_epochs, num_models):
     device = torch.device(f"cuda:{rank}")
 
     # 确保结果保存目录存在
-    os.makedirs(f"results{num_models}", exist_ok=True)
+    os.makedirs(f"results", exist_ok=True)
 
     lr_generator = 1e-4
     lr_image_finger_print = 1e-4
@@ -46,11 +45,9 @@ def train_example(rank, world_size, num_epochs, num_models):
     image_finger_print = nn.SyncBatchNorm.convert_sync_batchnorm(image_finger_print)
     image_finger_print = nn.parallel.DistributedDataParallel(image_finger_print, device_ids=[rank])
 
-    model = [nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
-             for _ in range(num_models)]
+    generator = nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
 
-    optimizers = [optim.Adam(generator.parameters(), lr=lr_generator + random.uniform(-1e-5, 1e-5)) for generator in
-                  model]
+    g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(image_finger_print.parameters(), lr=lr_image_finger_print)
 
     scheduler = optim.lr_scheduler.StepLR
@@ -60,14 +57,11 @@ def train_example(rank, world_size, num_epochs, num_models):
         step_size=5,
         gamma=0.65
     )
-    g_lr_schedulers = []
-    for optimizer in optimizers:
-        lr_scheduler = scheduler(
-            optimizer=optimizer,
-            step_size=5,
-            gamma=0.65
-        )
-        g_lr_schedulers.append(lr_scheduler)
+    lr_scheduler = scheduler(
+        optimizer=g_optimizer,
+        step_size=5,
+        gamma=0.65
+    )
 
     image_folder_path = os.path.join(os.getcwd(), 'data', 'train')
     train_data = ImageDatasetWithTransforms(image_folder_path, normalize_img_size, downward_img_quality)
@@ -86,29 +80,22 @@ def train_example(rank, world_size, num_epochs, num_models):
 
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
-        gen_losses = [0 for i in range(len(model))]
-        avg_loss = train_one_epoch(model, image_finger_print, train_loader, optimizers, d_optimizer
-                                   , g_criterion, device, epoch, num_epochs, gen_losses)
+        avg_loss = train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_optimizer
+                                   , g_criterion, device, epoch, num_epochs)
         avg_losses.append(avg_loss)
 
         d_lr_scheduler.step()
 
-        for lr_scheduler in g_lr_schedulers[1:]:
-            lr_scheduler.step()
-
-        # 将模型按照对比损失，从小到大排列
-        shuffle_lists_in_same_order(model, optimizers, gen_losses)
+        lr_scheduler.step()
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0 and dist.get_rank() == 0:
-            validate(model[-1], val_loader, device, epoch, num_models, "fingerprint")
+            validate(generator, val_loader, device, epoch, "fingerprint")
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
     # Save the generator model's state_dict
-    # avg_losses[0] = 1 # 防止第一个损失太大带来的曲线偏离，无法看清后续的变化趋势
-    for i in range(len(model)):
-        torch.save(model[i].state_dict(), os.path.join(f'results{num_models}', f'generator_model_{i}.pth'))
+    torch.save(generator.state_dict(), os.path.join(f'results', f'generator_model.pth'))
     # Plotting the loss curve
     plt.figure(figsize=(10, 6))
     plt.plot(range(1, num_epochs + 1), avg_losses, marker='o', linestyle='-', color='b', label='Training Loss')
@@ -119,11 +106,11 @@ def train_example(rank, world_size, num_epochs, num_models):
     plt.grid(True)
 
     # Save the plot as an image file in the 'results' directory
-    plt.savefig(os.path.join(f'results{num_models}', 'training_loss_curve.png'))
+    plt.savefig(os.path.join(f'results', 'training_loss_curve.png'))
 
 
-def train_one_epoch(model, image_finger_print, train_loader, g_optimizer, d_optimizer
-                    , g_criterion, device, epoch, num_epochs, gen_losses):
+def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_optimizer
+                    , g_criterion, device, epoch, num_epochs):
     total_loss = 0
     description = "Training"
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
@@ -132,36 +119,22 @@ def train_one_epoch(model, image_finger_print, train_loader, g_optimizer, d_opti
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        better_model = model[-1]
-        g_loss = 0
-
         d_loss = train_image_finger_print(image_finger_print, hr_imgs, d_optimizer)
 
-        for i in range(len(model)):
-            generator = model[i]
-            optimizer = g_optimizer[i]
-
-            g_loss = train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
-                                     g_criterion, optimizer,
-                                     i, better_model, gen_losses)
-
-            gen_losses[i] += g_loss
+        g_loss = train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
+                                 g_criterion, g_optimizer)
 
         t.set_postfix(g=g_loss, d=d_loss)
         total_loss += g_loss
 
     avg_loss = total_loss / len(train_loader)
 
-    for i in range(len(gen_losses)):
-        gen_losses[i] /= len(train_loader)  # 直接修改原列表
-
     print(f"Epoch [{epoch + 1}/{num_epochs}] {description} Loss: {avg_loss:.6f}")
     return avg_loss
 
 
 def train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
-                    g_criterion, g_optimizer,
-                    model_idx, better_model, gen_losses):
+                    g_criterion, g_optimizer):
     torch.autograd.set_detect_anomaly(True)
     # --- Train Generator ---
     generator.train()
@@ -212,7 +185,7 @@ def train_image_finger_print(image_finger_print, hr_imgs, d_optimizer):
     return loss_item
 
 
-def validate(model, val_loader, device, epoch, num_models, desc):
+def validate(model, val_loader, device, epoch, desc):
     model.eval()
     with torch.no_grad():
         # 从验证集中获取一个batch
@@ -232,14 +205,14 @@ def validate(model, val_loader, device, epoch, num_models, desc):
             comp_list.append(comp)
         # 制作成图片网格，每行一个样本
         comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=False)
-        save_path = os.path.join(f"results{num_models}", f"{desc}_epoch_{epoch + 1}_comparison.png")
+        save_path = os.path.join(f"results", f"{desc}_epoch_{epoch + 1}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
         print(f"Epoch {epoch + 1}: Comparison image saved to {save_path}")
     return save_path
 
 
 if __name__ == "__main__":
-    print(f'Training with {nums_model} generators competing!')
+    print(f'Training!')
 
     world_size = torch.cuda.device_count()
-    mp.spawn(train_example, args=(world_size, nums_epoch, nums_model), nprocs=world_size)
+    mp.spawn(train_example, args=(world_size, nums_epoch), nprocs=world_size)
