@@ -159,7 +159,7 @@ def train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
     fake_preds = image_finger_print(sr_images)
     real_preds = image_finger_print(hr_imgs)
 
-    g_loss = g_criterion(fake_preds, real_preds)# 高维比对
+    g_loss = g_criterion(fake_preds, real_preds) + g_criterion(sr_images, hr_imgs)           # 高维比对
 
     g_optimizer.zero_grad()
     g_loss.backward()
