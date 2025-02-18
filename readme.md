@@ -18,3 +18,6 @@
 
 ![img.png](img.png)
 BatchNorm 不适用分布式训练？
+
+pipreqs /path/to/your/project --force
+自动添加requirements.txt
