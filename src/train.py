@@ -125,7 +125,7 @@ def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        d_loss = train_image_finger_print(image_finger_print, generator, hr_imgs, d_optimizer)
+        d_loss = train_image_finger_print(image_finger_print, generator, hr_imgs, lr_imgs, d_optimizer)
 
         g_loss = train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
                                  g_criterion, g_optimizer)
@@ -172,16 +172,14 @@ def train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
     return loss_item
 
 
-def train_image_finger_print(image_finger_print, generator, hr_imgs, d_optimizer):
+def train_image_finger_print(image_finger_print, generator, hr_imgs, lr_imgs, d_optimizer):
     torch.autograd.set_detect_anomaly(True)
     # --- Train image_finger_print ---
     image_finger_print.train()
     with torch.no_grad():
-        sr_imgs = generator(hr_imgs)
+        sr_imgs = generator(lr_imgs)
 
     # Get image_finger_print predictions
-    print(sr_imgs.size())
-    print(hr_imgs.size())
     preds = image_finger_print(sr_imgs.detach())
 
     d_loss = uniformity_loss(preds)
