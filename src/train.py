@@ -75,6 +75,7 @@ def train_example(rank, world_size, num_epochs):
 
     for epoch in range(num_epochs):
         sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
+        sampler_val.set_epoch(epoch)
 
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
