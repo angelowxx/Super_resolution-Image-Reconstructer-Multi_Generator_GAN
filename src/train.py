@@ -88,15 +88,11 @@ def train_example(rank, world_size, num_epochs):
         lr_scheduler.step()
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        if dist.get_rank() == 0:
-            validate(generator, val_loader, device, epoch, "fingerprint")
+        validate(generator, val_loader, device, epoch, "fingerprint", dist.get_rank())
 
-        dist.barrier()
         print(f"All processes passed epoch {epoch}")
 
-    if dist.get_rank() == 0:
-        compute_score(generator, val_loader, device)
-    dist.barrier()
+    compute_score(generator, val_loader, device)
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
@@ -193,7 +189,7 @@ def train_image_finger_print(image_finger_print, hr_imgs, d_optimizer):
     return loss_item
 
 
-def validate(model, val_loader, device, epoch, desc):
+def validate(model, val_loader, device, epoch, desc, rank):
     model.eval()
     with torch.no_grad():
         # 从验证集中获取一个batch
@@ -214,7 +210,7 @@ def validate(model, val_loader, device, epoch, desc):
 
         # 制作成图片网格，每行一个样本
         comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=False)
-        save_path = os.path.join(f"results", f"{desc}_epoch_{epoch + 1}_comparison.png")
+        save_path = os.path.join(f"results", f"{desc}_epoch_{epoch + 1}_{rank}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
         print(f"Epoch {epoch + 1}: Comparison image saved to {save_path}")
 
