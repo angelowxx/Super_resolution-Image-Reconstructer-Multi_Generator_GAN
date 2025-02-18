@@ -96,8 +96,6 @@ class ImageFingerPrint(nn.Module):
             nn.Linear(num_filters * 16 * (clip_width//32) * (clip_height//32), clip_width * (clip_height//32)),
             nn.Tanh(),
 
-            nn.Linear(clip_width * (clip_height//32), clip_width * (clip_height // 256)),
-            nn.Tanh()
         )
 
     def forward(self, x):
