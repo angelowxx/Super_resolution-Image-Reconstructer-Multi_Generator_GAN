@@ -203,8 +203,8 @@ def validate(model, val_loader, device, epoch, desc):
                                   align_corners=False).squeeze(0)
             comp = torch.cat((lr_up, sr_imgs[i], hr_imgs[i]), dim=2)
             comp_list.append(comp)
-            psnr += calculate_psnr(sr_imgs[i], hr_imgs[i])
-            ssim += calculate_ssim(sr_imgs[i], hr_imgs[i])
+            psnr += calculate_psnr(lr_up, hr_imgs[i])
+            ssim += calculate_ssim(lr_up, hr_imgs[i])
 
         psnr /= hr_imgs.size(0)
         ssim /= hr_imgs.size(0)
