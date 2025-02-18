@@ -181,6 +181,7 @@ def train_image_finger_print(image_finger_print, generator, hr_imgs, d_optimizer
 
     # Get image_finger_print predictions
     print(sr_imgs.size())
+    print(hr_imgs.size())
     preds = image_finger_print(sr_imgs.detach())
 
     d_loss = uniformity_loss(preds)
