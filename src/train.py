@@ -119,9 +119,6 @@ def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
 
-        if batch_idx == 20:
-            break
-
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
@@ -170,7 +167,6 @@ def train_image_finger_print(image_finger_print, generator, hr_imgs, lr_imgs, d_
     torch.autograd.set_detect_anomaly(True)
     # --- Train image_finger_print ---
     image_finger_print.train()
-    generator.train()
 
     sr_imgs = generator(lr_imgs)
 
@@ -186,7 +182,6 @@ def train_image_finger_print(image_finger_print, generator, hr_imgs, lr_imgs, d_
     d_optimizer.step()
 
     image_finger_print.eval()
-    generator.eval()
 
     loss_item = d_loss.item()
 
