@@ -102,9 +102,9 @@ class ImageFingerPrint(nn.Module):
 
     def forward(self, x):
         x = self.model(x)
-        print(x.size)
-        x = x.view(x.size(0), -1)
-        print(x.size)
+        print(x.size())
+        x = x.flatten(start_dim=1)
+        print(x.size())
         x = self.classifier(x)  # 通过全连接层
         x = x / (x.norm(p=2, dim=1, keepdim=True) + 1e-6)  # 避免除零
         return x
