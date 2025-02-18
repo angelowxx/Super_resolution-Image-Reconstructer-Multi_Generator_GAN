@@ -76,7 +76,7 @@ class ConnectingConv(nn.Module):
 
     def forward(self, x):
         x1 = self.conv(x)
-        x = torch.cat([x, x1], dim=0)
+        x = torch.cat([x, x1], dim=1)
         x = self.pool(x)
         return x
 
