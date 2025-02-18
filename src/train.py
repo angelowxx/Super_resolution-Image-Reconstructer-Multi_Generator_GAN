@@ -150,7 +150,7 @@ def train_generator(generator, image_finger_print, lr_imgs, hr_imgs,
     fake_preds = image_finger_print(sr_images)
     real_preds = image_finger_print(hr_imgs)
 
-    g_loss = g_criterion(fake_preds, real_preds)  # 高维比对
+    g_loss = g_criterion(fake_preds, real_preds) + uniformity_loss(fake_preds)  # 高维比对
 
     g_optimizer.zero_grad()
     g_loss.backward()
@@ -170,8 +170,6 @@ def train_image_finger_print(image_finger_print, generator, hr_imgs, d_optimizer
     torch.autograd.set_detect_anomaly(True)
     # --- Train image_finger_print ---
     image_finger_print.train()
-    generator.train()  # to force the generator enhance different images with larger distances in hi-dimensional space
-
     sr_imgs = generator(hr_imgs)
 
     # Get image_finger_print predictions
@@ -186,7 +184,6 @@ def train_image_finger_print(image_finger_print, generator, hr_imgs, d_optimizer
     d_optimizer.step()
 
     image_finger_print.eval()
-    generator.eval()
 
     loss_item = d_loss.item()
 
