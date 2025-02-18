@@ -90,8 +90,6 @@ def train_example(rank, world_size, num_epochs):
         # 验证：每个epoch结束后随机取一个batch验证效果
         validate(generator, val_loader, device, epoch, "fingerprint", dist.get_rank())
 
-        print(f"All processes passed epoch {epoch}")
-
     compute_score(generator, val_loader, device)
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
@@ -212,7 +210,7 @@ def validate(model, val_loader, device, epoch, desc, rank):
         comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=False)
         save_path = os.path.join(f"results", f"{desc}_epoch_{epoch + 1}_{rank}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
-        print(f"Epoch {epoch + 1}: Comparison image saved to {save_path}")
+        print(f"Epoch {epoch + 1} rank{rank}: Comparison image saved to {save_path}")
 
     return save_path
 
@@ -229,8 +227,8 @@ def compute_score(model, val_loader, device):
         sr_imgs = model(lr_imgs)
 
         for i in range(hr_imgs.size(0)):
-            psnr += calculate_psnr(sr_imgs, hr_imgs[i])
-            ssim += calculate_ssim(sr_imgs, hr_imgs[i])
+            psnr += calculate_psnr(sr_imgs[i], hr_imgs[i])
+            ssim += calculate_ssim(sr_imgs[i], hr_imgs[i])
 
         psnr /= hr_imgs.size(0)
         ssim /= hr_imgs.size(0)
