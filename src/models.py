@@ -76,7 +76,10 @@ class ImageFingerPrint(nn.Module):
             nn.Conv2d(input_channels, num_filters, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
-            nn.Conv2d(num_filters, num_filters * 4, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(num_filters, num_filters * 2, kernel_size=3, stride=2, padding=1),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=3, stride=2, padding=1),
@@ -89,7 +92,7 @@ class ImageFingerPrint(nn.Module):
 
         # 全连接层
         self.classifier = nn.Sequential(
-            nn.Linear(num_filters * 16 * (clip_width//16) * (clip_height//16), clip_width * (clip_height//128)),
+            nn.Linear(num_filters * 16 * (clip_width//32) * (clip_height//32), clip_width * (clip_height//128)),
             nn.Tanh(),
 
         )
