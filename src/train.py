@@ -88,7 +88,8 @@ def train_example(rank, world_size, num_epochs):
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if dist.get_rank() == 0:
-            validate(generator, val_loader, device, epoch, "fingerprint")
+            #validate(generator, val_loader, device, epoch, "fingerprint")
+            print()
         dist.barrier()
         print(f"All processes passed epoch {epoch}")
 
