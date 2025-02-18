@@ -145,10 +145,10 @@ def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, im
 
         i_loss = train_image_finger_print(image_finger_print, hr_imgs, image_fingerprint_optimizer)
 
+        d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
+
         g_loss = train_generator(generator, image_finger_print, discriminator, lr_imgs, hr_imgs,
                                  g_criterion, g_optimizer)
-
-        d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
 
         t.set_postfix(g=g_loss, i=i_loss, d=d_loss)
         total_loss += g_loss
