@@ -108,5 +108,5 @@ def calculate_psnr(img1, img2):
 def calculate_ssim(img1, img2):
     img1_np = np.array(img1.cpu(), dtype=np.float32)
     img2_np = np.array(img2.cpu(), dtype=np.float32)
-    return ssim(img1_np, img2_np, data_range=255, multichannel=True)
+    return ssim(img1_np, img2_np, data_range=255, multichannel=True, win_size=3)
 
