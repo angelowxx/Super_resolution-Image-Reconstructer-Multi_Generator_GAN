@@ -92,8 +92,14 @@ image_encoder 用来取代单纯的像素对比， 待完成
 
 def uniformity_loss(embeddings, t=2):
     # embeddings: Tensor of shape [batch, dim]
+
+    # Check if batch size is 1 (or only one embedding is present)
+    if embeddings.size(0) == 1:
+        return torch.tensor(0.0, device=embeddings.device)  # Return 0 loss if only 1 embedding
+
     # Compute pairwise distances (using pdist, which returns distances for each pair)
     pairwise_dists = torch.pdist(embeddings, p=2)
+
     # Compute loss: encourages large distances
     loss = torch.log(torch.mean(torch.exp(-t * pairwise_dists.pow(2) + 1e-7)))  # Adding small epsilon
     return loss
