@@ -176,7 +176,7 @@ def train_generator(generator, image_finger_print, discriminator, lr_imgs, hr_im
     real_preds = discriminator(hr_imgs)
 
     #g_loss = g_criterion(fake_prints, real_prints) + g_criterion(sr_images, hr_imgs) + torch.mean(real_preds-fake_preds)
-    g_loss = torch.mean(real_preds-fake_preds)
+    g_loss = torch.mean(torch.relu(real_preds-fake_preds))
 
     g_optimizer.zero_grad()
     g_loss.backward()
@@ -228,7 +228,7 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
     real_preds = discriminator(hr_imgs)
     fake_preds = discriminator(sr_imgs)
 
-    d_loss = torch.mean(fake_preds-real_preds)
+    d_loss = torch.mean(torch.relu(fake_preds-real_preds))
 
     # Update image_finger_print
     d_optimizer.zero_grad()
