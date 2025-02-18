@@ -89,8 +89,11 @@ def train_example(rank, world_size, num_epochs):
         # 验证：每个epoch结束后随机取一个batch验证效果
         if dist.get_rank() == 0:
             validate(generator, val_loader, device, epoch, "fingerprint")
+        dist.barrier()
+    if dist.get_rank() == 0:
+        compute_score(generator, val_loader, device)
+    dist.barrier()
 
-    compute_score(generator, val_loader, device)
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
     # Save the generator model's state_dict
