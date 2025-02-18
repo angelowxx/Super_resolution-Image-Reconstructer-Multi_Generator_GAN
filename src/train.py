@@ -80,7 +80,7 @@ def train_example(rank, world_size, num_epochs):
 
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
-        avg_loss = train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_optimizer
+        train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_optimizer
                                    , g_criterion, device, epoch, num_epochs)
 
         d_lr_scheduler.step()
