@@ -90,6 +90,7 @@ def train_example(rank, world_size, num_epochs):
         if dist.get_rank() == 0:
             validate(generator, val_loader, device, epoch, "fingerprint")
         dist.barrier()
+
     if dist.get_rank() == 0:
         compute_score(generator, val_loader, device)
     dist.barrier()
