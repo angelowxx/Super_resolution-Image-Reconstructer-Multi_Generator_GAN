@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 10
+nums_epoch = 50
 
 
 def train_example(rank, world_size, num_epochs):
@@ -76,7 +76,7 @@ def train_example(rank, world_size, num_epochs):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.2
+    split_ratio = 0.8
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -110,7 +110,8 @@ def train_example(rank, world_size, num_epochs):
         d_lr_scheduler.step()
 
         # 验证：每个epoch结束后随机取一个batch验证效果
-        validate(generator, train_loader, device, epoch, "fingerprint", dist.get_rank())
+        if (epoch+1) % 5 == 0 :
+            validate(generator, train_loader, device, epoch, "fingerprint", dist.get_rank())
 
         psnr, ssim = compute_score(generator, train_loader, device)
         psnrs.append(psnr / 30)
