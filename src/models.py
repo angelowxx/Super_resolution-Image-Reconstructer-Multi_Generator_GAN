@@ -91,23 +91,20 @@ class ImageFingerPrint(nn.Module):
             nn.Conv2d(num_filters * 4, num_filters * 4, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
-            nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=3, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
-
         )
 
         # 全连接层
-        """self.classifier = nn.Sequential(
+        self.classifier = nn.Sequential(
             nn.Linear(num_filters * 4 * (clip_width//64) * (clip_height//64), clip_width * (clip_height//128)),
             nn.Tanh(),
 
-        )"""
+        )
 
     def forward(self, x):
         x = self.model(x)
         x = x.flatten(start_dim=1)
-        # x = self.classifier(x)  # 通过全连接层
-        x = x / (x.norm(p=2, dim=1, keepdim=True) + 1e-6)
+        x = self.classifier(x)  # 通过全连接层
+        x = x / (x.norm(p=2, dim=1, keepdim=True) + 1e-6)  # 避免除零
         return x
 
 
