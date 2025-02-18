@@ -114,6 +114,8 @@ def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, d_
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
 
+        if batch_idx == 5:
+            break
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
