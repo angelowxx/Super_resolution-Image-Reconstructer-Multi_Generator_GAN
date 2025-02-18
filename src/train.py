@@ -166,14 +166,18 @@ def train_generator(generator, image_finger_print, discriminator, lr_imgs, hr_im
     torch.autograd.set_detect_anomaly(True)
     # --- Train Generator ---
     generator.train()
+    image_finger_print.eval()
+    discriminator.eval()
+
+    with torch.no_grad():
+        real_prints = image_finger_print(hr_imgs)
+        real_preds = discriminator(hr_imgs)
 
     sr_images = generator(lr_imgs)
 
     fake_prints = image_finger_print(sr_images)
-    real_prints = image_finger_print(hr_imgs)
 
     fake_preds = discriminator(sr_images)
-    real_preds = discriminator(hr_imgs)
 
     #g_loss = g_criterion(fake_prints, real_prints) + g_criterion(sr_images, hr_imgs) + torch.mean(real_preds-fake_preds)
     g_loss = torch.mean(torch.relu(real_preds-fake_preds))
@@ -181,8 +185,6 @@ def train_generator(generator, image_finger_print, discriminator, lr_imgs, hr_im
     g_optimizer.zero_grad()
     g_loss.backward()
     g_optimizer.step()
-
-    generator.eval()
 
     loss_item = g_loss.item()
 
@@ -207,8 +209,6 @@ def train_image_finger_print(image_finger_print, hr_imgs, image_fingerprint_opti
     d_loss.backward()
     image_fingerprint_optimizer.step()
 
-    image_finger_print.eval()
-
     loss_item = d_loss.item()
 
     del d_loss  # Delete loss tensor
@@ -221,6 +221,7 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
     torch.autograd.set_detect_anomaly(True)
     # --- Train image_finger_print ---
     discriminator.train()
+    generator.eval()
 
     sr_imgs = generator(lr_imgs)
 
@@ -234,8 +235,6 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
     d_optimizer.zero_grad()
     d_loss.backward()
     d_optimizer.step()
-
-    discriminator.eval()
 
     loss_item = d_loss.item()
 
