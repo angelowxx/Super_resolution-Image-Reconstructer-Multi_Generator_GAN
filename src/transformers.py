@@ -79,7 +79,7 @@ downward_img_quality = transforms.Compose([
 ])
 
 normalize_img_size = transforms.Compose([
-    transforms.Resize((clip_height, clip_width), Image.BILINEAR),
+    transforms.Resize((clip_height, clip_width), Image.BICUBIC),
     transforms.ToTensor()
 ])
 
