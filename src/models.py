@@ -91,6 +91,9 @@ class ImageFingerPrint(nn.Module):
             nn.Conv2d(num_filters * 4, num_filters * 4, kernel_size=3, stride=2, padding=1),
             nn.LeakyReLU(0.2),
 
+            nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=3, stride=2, padding=1),
+            nn.LeakyReLU(0.2),
+
         )
 
         # 全连接层
