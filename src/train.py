@@ -171,6 +171,7 @@ def train_image_finger_print(image_finger_print, generator, hr_imgs, lr_imgs, d_
     # --- Train image_finger_print ---
     image_finger_print.train()
     generator.train()
+
     sr_imgs = generator(lr_imgs)
 
     # Get image_finger_print predictions
