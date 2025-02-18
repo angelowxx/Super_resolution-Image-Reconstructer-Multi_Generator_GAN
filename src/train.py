@@ -69,7 +69,6 @@ def train_example(rank, world_size, num_epochs):
         T_max=num_epochs
     )
 
-
     # Define paths
     train_folder_path = os.path.join(os.getcwd(), 'data', 'train')
 
@@ -102,7 +101,7 @@ def train_example(rank, world_size, num_epochs):
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, image_fingerprint_optimizer
-                                   , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer)
+                        , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer)
 
         i_lr_scheduler.step()
 
@@ -114,7 +113,7 @@ def train_example(rank, world_size, num_epochs):
         validate(generator, train_loader, device, epoch, "fingerprint", dist.get_rank())
 
         psnr, ssim = compute_score(generator, train_loader, device)
-        psnrs.append(psnr/30)
+        psnrs.append(psnr / 30)
         ssims.append(ssim)
 
     # Save the generator model's state_dict
@@ -141,7 +140,6 @@ def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, im
     description = "Training"
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
@@ -173,12 +171,13 @@ def train_generator(generator, image_finger_print, discriminator, lr_imgs, hr_im
 
     fake_prints = image_finger_print(sr_images)
     fake_preds = discriminator(sr_images)
-    
+
     with torch.no_grad():
         real_prints = image_finger_print(hr_imgs)
         real_preds = discriminator(hr_imgs)
 
-    g_loss = g_criterion(fake_prints, real_prints) + g_criterion(sr_images, hr_imgs) + torch.mean(real_preds-fake_preds)
+    g_loss = g_criterion(fake_prints, real_prints) + g_criterion(sr_images, hr_imgs) \
+             + torch.mean(torch.tanh(real_preds - fake_preds))
     # g_loss = torch.mean(real_preds-fake_preds)
     # g_loss = g_criterion(fake_prints, real_prints)
     # g_loss = g_criterion(sr_images, hr_imgs)
@@ -230,7 +229,7 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
     real_preds = discriminator(hr_imgs)
     fake_preds = discriminator(sr_imgs)
 
-    d_loss = torch.mean(fake_preds-real_preds)
+    d_loss = torch.mean(fake_preds - real_preds)
 
     # Update image_finger_print
     d_optimizer.zero_grad()
@@ -293,7 +292,6 @@ def compute_score(model, val_loader, device):
         print(f'psnr={psnr}, ssim={ssim}')
 
     return psnr, ssim
-
 
 
 if __name__ == "__main__":
