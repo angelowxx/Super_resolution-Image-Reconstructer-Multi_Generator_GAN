@@ -14,7 +14,7 @@ from tqdm import tqdm
 from src.models import SRResNet, ImageFingerPrint, PerceptualLoss
 from src.transformers import normalize_img_size, downward_img_quality
 from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order, interpolate_models, \
-    uniformity_loss
+    uniformity_loss, calculate_psnr, calculate_ssim
 from PIL import Image
 import torchvision.utils as vutils
 
@@ -186,6 +186,8 @@ def train_image_finger_print(image_finger_print, hr_imgs, d_optimizer):
 def validate(model, val_loader, device, epoch, desc):
     model.eval()
     with torch.no_grad():
+        psnr = 0
+        ssim = 0
         # 从验证集中获取一个batch
         hr_imgs, lr_imgs = next(iter(val_loader))
         hr_imgs = hr_imgs.to(device)
@@ -201,11 +203,18 @@ def validate(model, val_loader, device, epoch, desc):
                                   align_corners=False).squeeze(0)
             comp = torch.cat((lr_up, sr_imgs[i], hr_imgs[i]), dim=2)
             comp_list.append(comp)
+            psnr += calculate_psnr(sr_imgs[i], hr_imgs[i])
+            ssim += calculate_ssim(sr_imgs[i], hr_imgs[i])
+
+        psnr /= hr_imgs.size(0)
+        ssim /= hr_imgs.size(0)
+        print(f'psnr={psnr}, ssim={ssim}')
         # 制作成图片网格，每行一个样本
         comparison_grid = vutils.make_grid(comp_list, nrow=1, padding=5, normalize=False)
         save_path = os.path.join(f"results", f"{desc}_epoch_{epoch + 1}_comparison.png")
         vutils.save_image(comparison_grid, save_path)
         print(f"Epoch {epoch + 1}: Comparison image saved to {save_path}")
+
     return save_path
 
 
