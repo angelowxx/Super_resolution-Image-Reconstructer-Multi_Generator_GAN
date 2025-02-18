@@ -1,10 +1,14 @@
 import os
 import random
 
+import numpy as np
 import torch
 import torchvision.transforms as transforms
 from PIL import Image, UnidentifiedImageError
 from torch.utils.data import Dataset
+
+from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import peak_signal_noise_ratio as psnr
 
 
 class ImageDatasetWithTransforms(Dataset):
@@ -93,4 +97,16 @@ def uniformity_loss(embeddings, t=2):
     # Compute loss: encourages large distances
     loss = torch.log(torch.mean(torch.exp(-t * pairwise_dists.pow(2))))
     return loss
+
+# 计算 PSNR
+def calculate_psnr(img1, img2):
+    img1_np = np.array(img1, dtype=np.float32)
+    img2_np = np.array(img2, dtype=np.float32)
+    return psnr(img1_np, img2_np, data_range=255)  # 255 是最大像素值
+
+# 计算 SSIM
+def calculate_ssim(img1, img2):
+    img1_np = np.array(img1, dtype=np.float32)
+    img2_np = np.array(img2, dtype=np.float32)
+    return ssim(img1_np, img2_np, data_range=255, multichannel=True)
 
