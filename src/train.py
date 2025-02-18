@@ -229,7 +229,7 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
     real_preds = discriminator(hr_imgs)
     fake_preds = discriminator(sr_imgs)
 
-    d_loss = torch.mean(fake_preds - real_preds)
+    d_loss = torch.mean(torch.tanh(fake_preds - real_preds))
 
     # Update image_finger_print
     d_optimizer.zero_grad()
