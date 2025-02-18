@@ -97,11 +97,11 @@ class ImageFingerPrint(nn.Module):
         )
 
         # 全连接层
-        self.classifier = nn.Sequential(
+        """self.classifier = nn.Sequential(
             nn.Linear(num_filters * 4 * (clip_width//64) * (clip_height//64), clip_width * (clip_height//128)),
             nn.Tanh(),
 
-        )
+        )"""
 
     def forward(self, x):
         x = self.model(x)
