@@ -81,7 +81,7 @@ def train_example(rank, world_size, num_epochs):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.2
+    split_ratio = 0.05
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -93,8 +93,8 @@ def train_example(rank, world_size, num_epochs):
     val_sampler = DistributedSampler(val_subset, num_replicas=world_size, rank=rank)
 
     # Create DataLoaders
-    train_loader = DataLoader(train_subset, batch_size=6, sampler=train_sampler, num_workers=0)
-    val_loader = DataLoader(val_subset, batch_size=6, sampler=val_sampler, num_workers=0)
+    train_loader = DataLoader(train_subset, batch_size=8, sampler=train_sampler, num_workers=0)
+    val_loader = DataLoader(val_subset, batch_size=8, sampler=val_sampler, num_workers=0)
 
     psnrs = []
     ssims = []

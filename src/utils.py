@@ -132,10 +132,6 @@ def perceptal_loss(sr_imgs, hr_imgs, feature_extractor):
     perceptual_loss = 0
     l1_loss = torch.nn.L1Loss()
     for key in features_real.keys():
-        if torch.isnan(features_fake[key]).any() or torch.isnan(features_real[key]).any():
-            print("NaN detected in VGG features at layer", key)
-        if not torch.isfinite(features_fake[key]).all() or not torch.isfinite(features_real[key]).all():
-            print("Inf or other non-finite values detected in VGG features at layer", key)
         perceptual_loss += l1_loss(features_fake[key], features_real[key])
 
     return perceptual_loss
