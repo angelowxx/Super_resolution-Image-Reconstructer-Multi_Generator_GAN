@@ -11,7 +11,7 @@ from torch import nn
 from torch.utils.data import DataLoader, DistributedSampler, random_split
 from tqdm import tqdm
 
-from src.models import SRResNet, ImageFingerPrint, Discriminator, VGGFeatureExtractor
+from src.models import SRResNet, Discriminator, VGGFeatureExtractor
 from src.transformers import normalize_img_size, downward_img_quality
 from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order, interpolate_models, \
     uniformity_loss, calculate_psnr, calculate_ssim, perceptal_loss
