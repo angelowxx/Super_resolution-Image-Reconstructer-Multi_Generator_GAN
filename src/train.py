@@ -103,7 +103,7 @@ def train_example(rank, world_size, num_epochs):
         train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, image_fingerprint_optimizer
                         , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer)
 
-        i_lr_scheduler.step()
+        #i_lr_scheduler.step()
 
         lr_scheduler.step()
 
