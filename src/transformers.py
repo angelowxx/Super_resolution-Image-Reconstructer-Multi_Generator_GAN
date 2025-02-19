@@ -50,8 +50,8 @@ class AddSaltPepperSpots:
         _, height, width = img.shape
 
         num_pixels = height * width
-        num_salt_spots = int(num_pixels * self.salt_prob)
-        num_pepper_spots = int(num_pixels * self.pepper_prob)
+        num_salt_spots = int(num_pixels * random.uniform(0, self.salt_prob))
+        num_pepper_spots = int(num_pixels * random.uniform(0, self.pepper_prob))
 
         # Generate all random top-left coordinates for salt spots
         xs_salt = torch.randint(0, width - self.spot_size + 1, (num_salt_spots,))
@@ -74,7 +74,7 @@ downward_img_quality = transforms.Compose([
     transforms.Resize((clip_height // 4, clip_width // 4)),
     # transforms.Resize((clip_height, clip_width)),
     transforms.ToTensor(),
-    transforms.Lambda(lambda x: x + torch.randn_like(x) * 0.05),
+    transforms.Lambda(lambda x: x + torch.randn_like(x) * random.uniform(0, 0.05)),
     AddSaltPepperSpots()
 ])
 
