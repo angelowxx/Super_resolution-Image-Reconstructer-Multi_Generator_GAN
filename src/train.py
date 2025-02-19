@@ -144,14 +144,14 @@ def train_one_epoch(generator, image_finger_print, train_loader, g_optimizer, im
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        i_loss = train_image_finger_print(image_finger_print, hr_imgs, image_fingerprint_optimizer)
+        # i_loss = train_image_finger_print(image_finger_print, hr_imgs, image_fingerprint_optimizer)
 
         d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
 
         g_loss = train_generator(generator, image_finger_print, discriminator, lr_imgs, hr_imgs,
                                  g_criterion, g_optimizer)
 
-        t.set_postfix(g=g_loss, i=i_loss, d=d_loss)
+        t.set_postfix(g=g_loss, d=d_loss)
         total_loss += g_loss
 
     avg_loss = total_loss / len(train_loader)
@@ -177,7 +177,7 @@ def train_generator(generator, image_finger_print, discriminator, lr_imgs, hr_im
         real_prints = image_finger_print(hr_imgs)
         real_preds = discriminator(hr_imgs)
 
-    g_loss = g_criterion(fake_prints, real_prints) + g_criterion(sr_images, hr_imgs) \
+    g_loss = g_criterion(sr_images, hr_imgs) \
              + torch.mean(torch.tanh(real_preds - fake_preds))
     # g_loss = torch.mean(real_preds-fake_preds)
     # g_loss = g_criterion(fake_prints, real_prints)
