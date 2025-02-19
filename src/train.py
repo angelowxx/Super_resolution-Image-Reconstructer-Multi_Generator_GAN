@@ -37,8 +37,8 @@ def train_example(rank, world_size, num_epochs):
     # 确保结果保存目录存在
     os.makedirs(f"results", exist_ok=True)
 
-    lr_generator = 2e-4
-    lr_dicriminator = 2e-4
+    lr_generator = 1e-4
+    lr_dicriminator = 1e-4
 
     g_criterion = torch.nn.L1Loss()
 
@@ -94,8 +94,8 @@ def train_example(rank, world_size, num_epochs):
     val_sampler = DistributedSampler(val_subset, num_replicas=world_size, rank=rank)
 
     # Create DataLoaders
-    train_loader = DataLoader(train_subset, batch_size=12, sampler=train_sampler, num_workers=0)
-    val_loader = DataLoader(val_subset, batch_size=12, sampler=val_sampler, num_workers=0)
+    train_loader = DataLoader(train_subset, batch_size=8, sampler=train_sampler, num_workers=0)
+    val_loader = DataLoader(val_subset, batch_size=8, sampler=val_sampler, num_workers=0)
 
     psnrs = []
     ssims = []
