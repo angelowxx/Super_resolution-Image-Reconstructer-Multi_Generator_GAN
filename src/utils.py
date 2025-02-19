@@ -10,6 +10,8 @@ from torch.utils.data import Dataset
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
+from src.models import VGGFeatureExtractor
+
 
 class ImageDatasetWithTransforms(Dataset):
     def __init__(self, folder_path, norm_transform=None, quality_transform=None):
@@ -105,11 +107,13 @@ def uniformity_loss(embeddings, t=2):
     loss = torch.log(torch.mean(torch.exp(-t * pairwise_dists.pow(2) + 1e-7)))  # Adding small epsilon
     return loss
 
+
 # 计算 PSNR
 def calculate_psnr(img1, img2):
     img1_np = np.array(img1.cpu(), dtype=np.float32)
     img2_np = np.array(img2.cpu(), dtype=np.float32)
     return psnr(img1_np, img2_np, data_range=1)  # 255 是最大像素值
+
 
 # 计算 SSIM
 def calculate_ssim(img1, img2):
@@ -117,3 +121,17 @@ def calculate_ssim(img1, img2):
     img2_np = np.array(img2.cpu(), dtype=np.float32)
     return ssim(img1_np, img2_np, data_range=1, multichannel=True, win_size=3)
 
+
+def perceptal_loss(sr_imgs, hr_imgs, feature_extractor):
+    # 使用示例
+
+    features_real = feature_extractor(hr_imgs)
+    features_fake = feature_extractor(sr_imgs)
+
+    # 计算感知损失（例如用L1损失）
+    perceptual_loss = 0
+    l1_loss = torch.nn.L1Loss()
+    for key in features_real.keys():
+        perceptual_loss += l1_loss(features_fake[key], features_real[key])
+
+    return perceptual_loss

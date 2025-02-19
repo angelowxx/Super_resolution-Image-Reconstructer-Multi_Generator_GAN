@@ -135,3 +135,34 @@ class Discriminator(nn.Module):
     def forward(self, x):
         x = self.model(x)
         return x
+
+
+class VGGFeatureExtractor(nn.Module):
+    def __init__(self, layers=('conv3_3', 'conv4_3')):
+        super(VGGFeatureExtractor, self).__init__()
+        vgg19 = models.vgg19(pretrained=True).features
+        self.layer_name_mapping = {
+            '3': "conv1_2",
+            '8': "conv2_2",
+            '17': "conv3_3",
+            '26': "conv4_3",
+            '35': "conv5_3"
+        }
+        self.selected_layers = layers
+        self.vgg19 = vgg19
+        # 冻结参数
+        for param in self.vgg19.parameters():
+            param.requires_grad = False
+
+    def forward(self, x):
+        features = {}
+        for name, layer in self.vgg19._modules.items():
+            x = layer(x)
+            if name in self.layer_name_mapping:
+                layer_name = self.layer_name_mapping[name]
+                if layer_name in self.selected_layers:
+                    features[layer_name] = x
+            # 提前结束
+            if len(features) == len(self.selected_layers):
+                break
+        return features
