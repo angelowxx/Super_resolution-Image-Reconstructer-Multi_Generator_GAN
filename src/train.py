@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 100
+nums_epoch = 30
 
 
 def train_example(rank, world_size, num_epochs):
