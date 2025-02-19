@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
+from torchvision.models import VGG19_Weights
+
 from src.variables import clip_width, clip_height
 
 
@@ -140,7 +142,7 @@ class Discriminator(nn.Module):
 class VGGFeatureExtractor(nn.Module):
     def __init__(self, layers=('conv3_3', 'conv4_3')):
         super(VGGFeatureExtractor, self).__init__()
-        vgg19 = models.vgg19(pretrained=True).features
+        vgg19 = models.vgg19(weights=VGG19_Weights.DEFAULT).features
         self.layer_name_mapping = {
             '3': "conv1_2",
             '8': "conv2_2",
