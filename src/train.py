@@ -46,8 +46,7 @@ def train_example(rank, world_size, num_epochs):
 
     discriminator = nn.parallel.DistributedDataParallel(Discriminator().to(device), device_ids=[rank])
 
-    vgg_extractor = nn.parallel.DistributedDataParallel(
-        VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device), device_ids=[rank])
+    vgg_extractor = VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device)
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_dicriminator)
