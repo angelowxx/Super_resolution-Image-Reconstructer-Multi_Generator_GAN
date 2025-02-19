@@ -11,6 +11,7 @@ from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
 
 from src.models import VGGFeatureExtractor
+from src.transformers import add_noise
 
 
 class ImageDatasetWithTransforms(Dataset):
@@ -44,14 +45,40 @@ class ImageDatasetWithTransforms(Dataset):
         return original_image, transformed_image
 
 
-# 定义预处理函数
-def get_transform():
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5],
-                             std=[0.5, 0.5, 0.5])  # 假设输入范围为[-1, 1]
-    ])
-    return transform
+class ImageDataset(Dataset):
+    def __init__(self, folder_path, path1, path2):
+        """
+        Args:
+            folder_path (str): Path to the folder containing images.
+            transform (callable, optional): Transformations to apply to images.
+        """
+        self.folder_path = folder_path
+
+        self.image1_files = [f for f in os.listdir(os.path.join(folder_path, path1)) if
+                             f.endswith(('jpg', 'jpeg', 'png', 'JPG'))]
+        self.image2_files = [f for f in os.listdir(os.path.join(folder_path, path2)) if
+                             f.endswith(('jpg', 'jpeg', 'png', 'JPG'))]
+        assert len(self.image1_files) == len(self.image2_files), "the sizes have to be the same!!!"
+
+    def __len__(self):
+        return len(self.image1_files)
+
+    def __getitem__(self, idx):
+        img1_path = os.path.join(self.folder_path, self.image1_files[idx])
+        img2_path = os.path.join(self.folder_path, self.image2_files[idx])
+        try:
+            image1 = Image.open(img1_path).convert("RGB")
+        except (UnidentifiedImageError, IOError) as e:
+            print(f"Error loading image {img1_path}: {e}")
+            raise IndexError  # Skip this index
+
+        try:
+            image2 = Image.open(img2_path).convert("RGB")
+        except (UnidentifiedImageError, IOError) as e:
+            print(f"Error loading image {img2_path}: {e}")
+            raise IndexError  # Skip this index
+
+        return image1, image2
 
 
 # 将 tensor 转换为 PIL Image
@@ -61,13 +88,6 @@ def tensor_to_image(tensor):
     tensor = tensor.clamp(0, 1)
     image = transforms.ToPILImage()(tensor)
     return image
-
-
-# 读取图像并进行预处理
-def load_image(image_path):
-    image = Image.open(image_path).convert("RGB")
-    transform = get_transform()
-    return transform(image).unsqueeze(0)  # 增加 batch 维度
 
 
 def shuffle_lists_in_same_order(*lists):
