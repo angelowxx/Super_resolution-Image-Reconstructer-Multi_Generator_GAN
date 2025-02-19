@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 60
+nums_epoch = 100
 
 
 def train_example(rank, world_size, num_epochs):
@@ -36,9 +36,9 @@ def train_example(rank, world_size, num_epochs):
     # 确保结果保存目录存在
     os.makedirs(f"results", exist_ok=True)
 
-    lr_generator = 1e-4
-    lr_image_finger_print = 1e-4
-    lr_dicriminator = 1e-4
+    lr_generator = 2e-4
+    lr_image_finger_print = 2e-4
+    lr_dicriminator = 2e-4
 
     g_criterion = torch.nn.L1Loss()
 
