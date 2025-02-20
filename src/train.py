@@ -102,8 +102,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     val_sampler = DistributedSampler(val_subset, num_replicas=world_size, rank=rank)
 
     # Create DataLoaders
-    train_loader = DataLoader(train_subset, batch_size=8, sampler=train_sampler, num_workers=0)
-    val_loader = DataLoader(val_subset, batch_size=8, sampler=val_sampler, num_workers=0)
+    train_loader = DataLoader(train_subset, batch_size=7, sampler=train_sampler, num_workers=0)
+    val_loader = DataLoader(val_subset, batch_size=7, sampler=val_sampler, num_workers=0)
 
     psnrs = []
     ssims = []
@@ -128,7 +128,6 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         psnr, ssim = compute_score(generator, train_loader, device)
         psnrs.append(psnr / 30)
         ssims.append(ssim)
-        dist.barrier()
 
     # Save the generator model's state_dict
     torch.save(generator.state_dict(), os.path.join(f'results', f'{prefix}_generator_model_{dist.get_rank()}.pth'))
