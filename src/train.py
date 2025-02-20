@@ -143,7 +143,7 @@ def train_example(rank, world_size, num_epochs):
     plt.grid(True)
 
     # Save the plot as an image file in the 'results' directory
-    plt.savefig(os.path.join(f'results', f'training_loss_curve_{dist.get_rank()}.png'))
+    plt.savefig(os.path.join(f'results', f'{prefix}training_loss_curve_{dist.get_rank()}.png'))
 
     dist.destroy_process_group()  # 训练结束后销毁进程组
 
