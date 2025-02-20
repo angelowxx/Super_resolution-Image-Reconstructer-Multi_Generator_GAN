@@ -22,6 +22,7 @@ import torch.nn.functional as F
 
 nums_epoch = 20
 warmUp_epochs = nums_epoch // 5
+continue_training = True
 
 
 def train_example(rank, world_size, num_epochs):
@@ -47,6 +48,9 @@ def train_example(rank, world_size, num_epochs):
     discriminator = nn.parallel.DistributedDataParallel(Discriminator().to(device), device_ids=[rank])
 
     vgg_extractor = VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device)
+
+    if continue_training:
+        generator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', 'generator_model_0.pth')))
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_dicriminator)
