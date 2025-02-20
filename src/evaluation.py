@@ -20,7 +20,7 @@ def evaluate_model(dataset, lr_path, hr_path):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model = SRResNet().to(device)
     model.load_state_dict(
-        torch.load(os.path.join(os.getcwd(), 'models', model_path), map_location=device))
+        torch.load(model_path, map_location=device))
 
     description = "evaluating"
     t = tqdm(eval_loader, desc=f"{description}")
