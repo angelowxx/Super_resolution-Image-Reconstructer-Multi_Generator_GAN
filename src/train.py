@@ -21,7 +21,7 @@ import torchvision.utils as vutils
 import torch.nn.functional as F
 
 nums_epoch = 10
-warmUp_epochs = nums_epoch // 5
+warmUp_epochs = 0
 continue_training = False
 prefix = "Training"
 
@@ -128,6 +128,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         psnr, ssim = compute_score(generator, train_loader, device)
         psnrs.append(psnr / 30)
         ssims.append(ssim)
+        dist.barrier()
 
     # Save the generator model's state_dict
     torch.save(generator.state_dict(), os.path.join(f'results', f'{prefix}_generator_model_{dist.get_rank()}.pth'))
