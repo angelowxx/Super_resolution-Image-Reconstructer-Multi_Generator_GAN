@@ -22,8 +22,6 @@ import torch.nn.functional as F
 
 nums_epoch = 10
 warmUp_epochs = 0
-continue_training = False
-prefix = "Training"
 
 
 def train_example(rank, world_size, num_epochs, continue_training, prefix):
@@ -279,6 +277,9 @@ def compute_score(model, val_loader, device):
 
 if __name__ == "__main__":
     print(f'Training!')
+
+    continue_training = False
+    prefix = "Training"
 
     world_size = torch.cuda.device_count()
     mp.spawn(train_example, args=(world_size, nums_epoch, continue_training, prefix), nprocs=world_size)
