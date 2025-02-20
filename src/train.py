@@ -51,6 +51,9 @@ def train_example(rank, world_size, num_epochs):
 
     if continue_training:
         generator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', 'generator_model_0.pth')))
+        discriminator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', 'discriminator_model_0.pth')))
+        lr_generator = lr_generator/100
+        lr_dicriminator = lr_dicriminator/100
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_dicriminator)
@@ -126,6 +129,7 @@ def train_example(rank, world_size, num_epochs):
 
     # Save the generator model's state_dict
     torch.save(generator.state_dict(), os.path.join(f'results', f'generator_model_{dist.get_rank()}.pth'))
+    torch.save(discriminator.state_dict(), os.path.join(f'results', f'discriminator_model_{dist.get_rank()}.pth'))
     # Plotting the loss curve
     plt.figure(figsize=(10, 6))
     plt.plot(range(1, num_epochs + 1), psnrs, marker='o', linestyle='-', color='b', label='PNSR/30')
