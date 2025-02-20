@@ -22,7 +22,7 @@ import torch.nn.functional as F
 
 nums_epoch = 20
 warmUp_epochs = nums_epoch // 5
-continue_training = True
+continue_training = False
 
 
 def train_example(rank, world_size, num_epochs):
