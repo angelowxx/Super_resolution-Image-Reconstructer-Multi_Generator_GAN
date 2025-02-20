@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 20
+nums_epoch = 10
 warmUp_epochs = nums_epoch // 5
 continue_training = False
 prefix = "Training"
