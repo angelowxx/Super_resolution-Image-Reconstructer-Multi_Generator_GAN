@@ -23,6 +23,7 @@ import torch.nn.functional as F
 nums_epoch = 20
 warmUp_epochs = nums_epoch // 5
 continue_training = False
+prefix = "Training"
 
 
 def train_example(rank, world_size, num_epochs):
@@ -54,6 +55,7 @@ def train_example(rank, world_size, num_epochs):
         discriminator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', 'discriminator_model_0.pth')))
         lr_generator = lr_generator/10
         lr_dicriminator = lr_dicriminator/10
+        prefix = "Post-Training"
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_dicriminator)
@@ -121,7 +123,7 @@ def train_example(rank, world_size, num_epochs):
 
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0:
-            validate(generator, train_loader, device, epoch, "fingerprint", dist.get_rank())
+            validate(generator, train_loader, device, epoch, prefix, dist.get_rank())
 
         psnr, ssim = compute_score(generator, train_loader, device)
         psnrs.append(psnr / 30)
