@@ -26,7 +26,7 @@ continue_training = False
 prefix = "Training"
 
 
-def train_example(rank, world_size, num_epochs):
+def train_example(rank, world_size, num_epochs, continue_training, prefix):
     # 初始化进程组
     os.environ['MASTER_ADDR'] = '127.0.0.1'
     os.environ['MASTER_PORT'] = '12355'  # 选择一个未被占用的端口
@@ -51,8 +51,8 @@ def train_example(rank, world_size, num_epochs):
     vgg_extractor = VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device)
 
     if continue_training:
-        generator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', 'generator_model_0.pth')))
-        discriminator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', 'discriminator_model_0.pth')))
+        generator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_generator_model_0.pth')))
+        discriminator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth')))
         lr_generator = lr_generator/10
         lr_dicriminator = lr_dicriminator/10
         prefix = "Post-Training"
@@ -90,7 +90,7 @@ def train_example(rank, world_size, num_epochs):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.8
+    split_ratio = 0.08
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -130,8 +130,8 @@ def train_example(rank, world_size, num_epochs):
         ssims.append(ssim)
 
     # Save the generator model's state_dict
-    torch.save(generator.state_dict(), os.path.join(f'results', f'generator_model_{dist.get_rank()}.pth'))
-    torch.save(discriminator.state_dict(), os.path.join(f'results', f'discriminator_model_{dist.get_rank()}.pth'))
+    torch.save(generator.state_dict(), os.path.join(f'results', f'{prefix}_generator_model_{dist.get_rank()}.pth'))
+    torch.save(discriminator.state_dict(), os.path.join(f'results', f'{prefix}_discriminator_model_{dist.get_rank()}.pth'))
     # Plotting the loss curve
     plt.figure(figsize=(10, 6))
     plt.plot(range(1, num_epochs + 1), psnrs, marker='o', linestyle='-', color='b', label='PNSR/30')
@@ -281,4 +281,4 @@ if __name__ == "__main__":
     print(f'Training!')
 
     world_size = torch.cuda.device_count()
-    mp.spawn(train_example, args=(world_size, nums_epoch), nprocs=world_size)
+    mp.spawn(train_example, args=(world_size, nums_epoch, continue_training, prefix), nprocs=world_size)
