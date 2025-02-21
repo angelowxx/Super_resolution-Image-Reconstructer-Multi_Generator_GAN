@@ -255,14 +255,17 @@ def validate(model, val_loader, device, epoch, desc, rank):
 
 def compute_score(model, val_loader, device):
     model.eval()
-    with torch.no_grad():
+    sum_psnr = 0
+    sum_ssim = 0
+    t = tqdm(val_loader, desc=f"validating:")
+    for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         psnr = 0
         ssim = 0
         # 从验证集中获取一个batch
-        hr_imgs, lr_imgs = next(iter(val_loader))
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
-        sr_imgs = model(lr_imgs)
+        with torch.no_grad():
+            sr_imgs = model(lr_imgs)
 
         for i in range(hr_imgs.size(0)):
             psnr += calculate_psnr(sr_imgs[i], hr_imgs[i])
@@ -270,9 +273,11 @@ def compute_score(model, val_loader, device):
 
         psnr /= hr_imgs.size(0)
         ssim /= hr_imgs.size(0)
-        print(f'psnr={psnr}, ssim={ssim}')
+        sum_psnr += psnr
+        sum_ssim += ssim
+        t.set_postfix(psnr=sum_psnr/(batch_idx+1), ssim=sum_ssim/(batch_idx+1))
 
-    return psnr, ssim
+    return sum_psnr/(len(t)+1), sum_ssim/(len(t)+1)
 
 
 if __name__ == "__main__":
