@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 5
+nums_epoch = 15
 warmUp_epochs = nums_epoch // 5
 
 
@@ -49,8 +49,10 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     vgg_extractor = VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device)
 
     if continue_training:
-        generator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_generator_model_0.pth')))
-        discriminator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth')))
+        generator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_generator_model_0.pth'),
+                                             weights_only=True))
+        discriminator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth'),
+                                                 weights_only=True))
         lr_generator = lr_generator/10
         lr_dicriminator = lr_dicriminator/10
         prefix = "Post-Training"
@@ -88,7 +90,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.01
+    split_ratio = 0.75
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
