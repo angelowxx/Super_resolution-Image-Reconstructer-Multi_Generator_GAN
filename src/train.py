@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 20
+nums_epoch = 5
 warmUp_epochs = nums_epoch // 5
 
 
@@ -37,8 +37,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     # 确保结果保存目录存在
     os.makedirs(f"results", exist_ok=True)
 
-    lr_generator = 1e-4
-    lr_dicriminator = 1e-4
+    lr_generator = 1e-5
+    lr_dicriminator = 1e-5
 
     g_criterion = torch.nn.L1Loss()
 
@@ -88,7 +88,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.75
+    split_ratio = 0.01
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -283,7 +283,7 @@ def compute_score(model, val_loader, device):
 if __name__ == "__main__":
     print(f'Training!')
 
-    continue_training = False
+    continue_training = True
     prefix = "Training"
 
     world_size = torch.cuda.device_count()
