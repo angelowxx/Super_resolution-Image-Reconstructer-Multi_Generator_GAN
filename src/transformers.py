@@ -72,10 +72,8 @@ class AddSaltPepperSpots:
 
 downward_img_quality = transforms.Compose([
     transforms.Resize((clip_height // 4, clip_width // 4)),
-    # transforms.Resize((clip_height, clip_width)),
     transforms.ToTensor(),
     transforms.Lambda(lambda x: x + torch.randn_like(x) * random.uniform(0, 0.05)),
-    # AddSaltPepperSpots()
 ])
 
 normalize_img_size = transforms.Compose([
@@ -94,5 +92,4 @@ to_tensor = transforms.Compose([
 add_noise = transforms.Compose([
     transforms.ToTensor(),
     transforms.Lambda(lambda x: x + torch.randn_like(x) * random.uniform(0, 0.05)),
-    # AddSaltPepperSpots()
 ])
