@@ -1,5 +1,6 @@
 import argparse
 import os
+from collections import OrderedDict
 
 import torch
 from torch.utils.data import DataLoader
@@ -12,15 +13,22 @@ from src.utils import ImageDatasetWithTransforms, calculate_psnr, calculate_ssim
 
 def evaluate_model(dataset, lr_path, hr_path):
     # Define paths
-    model_path = os.path.join(os.getcwd(), 'results', 'Post-Training_generator_model_1.pth')
+    model_path = os.path.join(os.getcwd(), 'results', 'Post-Training_generator_model_0.pth')
     eval_folder_path = dataset
     eval_data = ImageDataset(eval_folder_path, lr_path, hr_path)
     eval_loader = DataLoader(eval_data, batch_size=6)
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model = SRResNet().to(device)
-    model.load_state_dict(
-        torch.load(model_path, map_location=device))
+    state_dict = torch.load(model_path, map_location=device)
+    new_state_dict = OrderedDict()
+    for k, v in state_dict.items():
+        # Remove the "module." prefix if present
+        name = k[7:] if k.startswith("module.") else k
+        new_state_dict[name] = v
+
+    model.load_state_dict(new_state_dict)
+    model.eval()
 
     description = "evaluating"
     t = tqdm(eval_loader, desc=f"{description}")
