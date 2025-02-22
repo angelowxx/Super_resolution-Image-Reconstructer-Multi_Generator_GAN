@@ -153,6 +153,8 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
     total_loss = 0
     description = "Training"
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
+    sum_g_loss = 0
+    sum_d_loss = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
@@ -162,10 +164,12 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
         g_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
                                  g_criterion, g_optimizer)
 
-        t.set_postfix(g=g_loss, d=d_loss)
-        total_loss += g_loss
+        sum_g_loss += g_loss
+        sum_d_loss += d_loss
 
-    avg_loss = total_loss / len(train_loader)
+        t.set_postfix(g=sum_g_loss/(batch_idx+1), d=sum_d_loss/(batch_idx+1))
+
+    avg_loss = sum_g_loss / len(train_loader)
 
     print(f"Epoch [{epoch + 1}/{num_epochs}] {description} Loss: {avg_loss:.6f}")
     return avg_loss
