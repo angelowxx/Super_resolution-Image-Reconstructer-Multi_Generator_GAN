@@ -155,3 +155,6 @@ def perceptal_loss(sr_imgs, hr_imgs, feature_extractor):
         perceptual_loss += l1_loss(features_fake[key], features_real[key])
 
     return perceptual_loss
+
+def load_image():
+    print()
