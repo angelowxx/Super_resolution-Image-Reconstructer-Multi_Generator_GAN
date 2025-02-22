@@ -49,10 +49,10 @@ if __name__ == "__main__":
                                                      '..', 'data', 'eval'),
                                 help='where the evaluation dataset stored')
     cmdline_parser.add_argument('-lr', '--lr_dir',
-                                default='LOW x4 URban100 ',
+                                default='LRbicx4',
                                 help='where low resolution images stored under eval dataset')
     cmdline_parser.add_argument('-hr', '--hr_dir',
-                                default='HIGH x4 URban100 ',
+                                default='original',
                                 help='where high resolution images stored under eval dataset')
 
     args, unknowns = cmdline_parser.parse_known_args()
