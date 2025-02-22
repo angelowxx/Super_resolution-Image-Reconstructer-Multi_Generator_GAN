@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 15
+nums_epoch = 20
 warmUp_epochs = nums_epoch // 5
 
 
@@ -289,7 +289,7 @@ def compute_score(model, val_loader, device):
 if __name__ == "__main__":
     print(f'Training!')
 
-    continue_training = True
+    continue_training = False
     prefix = "Training"
 
     world_size = torch.cuda.device_count()
