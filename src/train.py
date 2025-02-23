@@ -266,7 +266,7 @@ def compute_score(model, val_loader, device):
     t = tqdm(val_loader, desc=f"validating:")
     cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if batch_idx == len(t) // 2:
+        if cnt == 5:
             break
         psnr = 0
         ssim = 0
