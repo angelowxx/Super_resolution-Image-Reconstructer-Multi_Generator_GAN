@@ -102,8 +102,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     val_sampler = DistributedSampler(val_subset, num_replicas=world_size, rank=rank)
 
     # Create DataLoaders
-    train_loader = DataLoader(train_subset, batch_size=7, sampler=train_sampler, num_workers=0)
-    val_loader = DataLoader(val_subset, batch_size=7, sampler=val_sampler, num_workers=0)
+    train_loader = DataLoader(train_subset, batch_size=7, sampler=train_sampler, num_workers=0, shuffle=True)
+    val_loader = DataLoader(val_subset, batch_size=7, sampler=val_sampler, num_workers=0, shuffle=True)
 
     psnrs = []
     ssims = []
@@ -265,6 +265,8 @@ def compute_score(model, val_loader, device):
     sum_ssim = 0
     t = tqdm(val_loader, desc=f"validating:")
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
+        if batch_idx == len(t) // 2:
+            break
         psnr = 0
         ssim = 0
         # 从验证集中获取一个batch
