@@ -116,7 +116,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
-                        , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer)
+                        , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer, prefix)
 
         lr_scheduler.step()
 
@@ -152,9 +152,9 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
 
 def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
-                    , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer):
-    total_loss = 0
-    description = "Training"
+                    , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer, prefix):
+
+    description = prefix
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     sum_g_loss = 0
     sum_d_loss = 0
