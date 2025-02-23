@@ -295,7 +295,7 @@ def compute_score(model, val_loader, device):
 if __name__ == "__main__":
     print(f'Training!')
 
-    continue_training = False
+    continue_training = True
     prefix = "Training"
 
     world_size = torch.cuda.device_count()
