@@ -98,8 +98,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     train_subset, val_subset = random_split(train_data, [train_size, val_size])
 
     # Create samplers
-    train_sampler = DistributedSampler(train_subset, num_replicas=world_size, rank=rank)
-    val_sampler = DistributedSampler(val_subset, num_replicas=world_size, rank=rank)
+    train_sampler = DistributedSampler(train_subset, num_replicas=world_size, rank=rank, shuffle=True)
+    val_sampler = DistributedSampler(val_subset, num_replicas=world_size, rank=rank, shuffle=True)
 
     # Create DataLoaders
     train_loader = DataLoader(train_subset, batch_size=7, sampler=train_sampler, num_workers=0)
