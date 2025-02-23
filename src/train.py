@@ -264,11 +264,13 @@ def compute_score(model, val_loader, device):
     sum_psnr = 0
     sum_ssim = 0
     t = tqdm(val_loader, desc=f"validating:")
+    cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         if batch_idx == len(t) // 2:
             break
         psnr = 0
         ssim = 0
+        cnt += 1
         # 从验证集中获取一个batch
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
@@ -283,9 +285,9 @@ def compute_score(model, val_loader, device):
         ssim /= hr_imgs.size(0)
         sum_psnr += psnr
         sum_ssim += ssim
-        t.set_postfix(psnr=sum_psnr/(batch_idx+1), ssim=sum_ssim/(batch_idx+1))
+        t.set_postfix(psnr=sum_psnr/cnt, ssim=sum_ssim/cnt)
 
-    return sum_psnr/(len(t)+1), sum_ssim/(len(t)+1)
+    return sum_psnr/cnt, sum_ssim/cnt
 
 
 if __name__ == "__main__":
