@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 20
+nums_epoch = 5
 warmUp_epochs = nums_epoch // 5
 
 
@@ -90,7 +90,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.7
+    split_ratio = 0.01
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -107,6 +107,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
     psnrs = []
     ssims = []
+    idx = []
 
     for epoch in range(num_epochs):
         train_sampler.set_epoch(epoch)  # 保证不同 GPU 训练的数据不重复
@@ -124,18 +125,19 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         # 验证：每个epoch结束后随机取一个batch验证效果
         if (epoch + 1) % 5 == 0:
             validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
+            psnr, ssim = compute_score(generator, val_loader, device)
+            psnrs.append(psnr / 30)
+            ssims.append(ssim)
+            idx.append(epoch+1)
 
-        psnr, ssim = compute_score(generator, val_loader, device)
-        psnrs.append(psnr / 30)
-        ssims.append(ssim)
 
     # Save the generator model's state_dict
     torch.save(generator.state_dict(), os.path.join(f'results', f'{prefix}_generator_model_{dist.get_rank()}.pth'))
     torch.save(discriminator.state_dict(), os.path.join(f'results', f'{prefix}_discriminator_model_{dist.get_rank()}.pth'))
     # Plotting the loss curve
     plt.figure(figsize=(10, 6))
-    plt.plot(range(1, num_epochs + 1), psnrs, marker='o', linestyle='-', color='b', label='PNSR/30')
-    plt.plot(range(1, num_epochs + 1), ssims, marker='o', linestyle='--', color='r', label='SSIM')
+    plt.plot(idx, psnrs, marker='o', linestyle='-', color='b', label='PNSR/30')
+    plt.plot(idx, ssims, marker='o', linestyle='--', color='r', label='SSIM')
     plt.title('Rating Curve')
     plt.xlabel('Epoch')
     plt.ylabel('Rating Value')
@@ -266,7 +268,7 @@ def compute_score(model, val_loader, device):
     t = tqdm(val_loader, desc=f"validating:")
     cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if cnt == 50:
+        if cnt == 5:
             break
         psnr = 0
         ssim = 0
