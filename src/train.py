@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 20
+nums_epoch = 5
 warmUp_epochs = nums_epoch // 5
 
 
@@ -266,7 +266,7 @@ def compute_score(model, val_loader, device):
     t = tqdm(val_loader, desc=f"validating:")
     cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if cnt == 5:
+        if cnt == 50:
             break
         psnr = 0
         ssim = 0
