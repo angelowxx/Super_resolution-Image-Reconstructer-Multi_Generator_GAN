@@ -102,8 +102,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     val_sampler = DistributedSampler(val_subset, num_replicas=world_size, rank=rank)
 
     # Create DataLoaders
-    train_loader = DataLoader(train_subset, batch_size=7, sampler=train_sampler, num_workers=0, shuffle=True)
-    val_loader = DataLoader(val_subset, batch_size=7, sampler=val_sampler, num_workers=0, shuffle=True)
+    train_loader = DataLoader(train_subset, batch_size=7, sampler=train_sampler, num_workers=0)
+    val_loader = DataLoader(val_subset, batch_size=7, sampler=val_sampler, num_workers=0)
 
     psnrs = []
     ssims = []
