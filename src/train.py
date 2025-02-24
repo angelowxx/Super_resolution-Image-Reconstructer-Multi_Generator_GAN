@@ -202,7 +202,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     com_loss = g_criterion(sr_images, hr_imgs)
     p_loss = perceptal_loss(sr_images, hr_imgs, vgg_extractor)
     g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
-    g_loss = com_loss + p_loss + g_d_loss
+    g_loss = 10 * com_loss + p_loss + 10 * g_d_loss
 
     g_optimizer.zero_grad()
     g_loss.backward()
