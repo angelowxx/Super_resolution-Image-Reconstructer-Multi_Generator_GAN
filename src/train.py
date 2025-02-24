@@ -158,23 +158,30 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     sum_g_loss = 0
     sum_d_loss = 0
+    sum_c_loss = 0
+    sum_p_loss = 0
+    sum_g_d_loss = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
         d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
 
-        g_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
+        g_loss, com_loss, p_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
                                  g_criterion, g_optimizer)
 
         sum_g_loss += g_loss
         sum_d_loss += d_loss
+        sum_c_loss += com_loss
+        sum_p_loss += p_loss
+        sum_g_d_loss += g_d_loss
 
         t.set_postfix(g=sum_g_loss/(batch_idx+1), d=sum_d_loss/(batch_idx+1))
 
-    avg_loss = sum_g_loss / len(train_loader)
+    avg_loss = sum_g_loss / len(t)
 
     print(f"Epoch [{epoch + 1}/{num_epochs}] {description} Loss: {avg_loss:.6f}")
+    print(f"com_loss: {sum_c_loss/len(t)}, p_loss: {sum_p_loss/len(t)}, g_d_loss: {sum_g_d_loss/len(t)}")
     return avg_loss
 
 
@@ -192,8 +199,10 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     with torch.no_grad():
         real_preds = discriminator(hr_imgs)
 
-    g_loss = g_criterion(sr_images, hr_imgs) + perceptal_loss(sr_images, hr_imgs, vgg_extractor)\
-             + torch.mean(torch.tanh(real_preds - fake_preds))
+    com_loss = g_criterion(sr_images, hr_imgs)
+    p_loss = perceptal_loss(sr_images, hr_imgs, vgg_extractor)
+    g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
+    g_loss = com_loss + p_loss + g_d_loss
 
     g_optimizer.zero_grad()
     g_loss.backward()
@@ -204,7 +213,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     del g_loss
     torch.cuda.empty_cache()  # Free unused memory
 
-    return loss_item
+    return loss_item, com_loss.item(), p_loss.item(), g_d_loss.item()
 
 
 def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer):
