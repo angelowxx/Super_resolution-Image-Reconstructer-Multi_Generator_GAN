@@ -53,8 +53,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
                                              weights_only=True))
         discriminator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth'),
                                                  weights_only=True))
-        lr_generator = lr_generator/2
-        lr_dicriminator = lr_dicriminator/2
+        lr_generator = lr_generator/5
+        lr_dicriminator = lr_dicriminator/5
         prefix = "Post-Training"
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
@@ -62,8 +62,12 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
     cosineLR = optim.lr_scheduler.CosineAnnealingLR
 
-    lr_scheduler = cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/2)
-    d_lr_scheduler = cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/2)
+    linearLR = optim.lr_scheduler.LinearLR
+
+    """lr_scheduler = cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/2)
+    d_lr_scheduler = cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/2)"""
+    lr_scheduler = linearLR(optimizer=g_optimizer, start_factor=1, end_factor=0.2, total_iters=num_epochs)
+    d_lr_scheduler = linearLR(optimizer=d_optimizer, start_factor=1, end_factor=0.2, total_iters=num_epochs)
 
     # Define paths
     train_folder_path = os.path.join(os.getcwd(), 'data', 'train')
