@@ -75,7 +75,7 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
-            nn.Conv2d(input_channels, num_filters, kernel_size=4, stride=2, padding=1),
+            nn.Conv2d(input_channels, num_filters, kernel_size=8, stride=3, padding=2),
             nn.InstanceNorm2d(num_filters),
             nn.LeakyReLU(0.2),
 
@@ -91,15 +91,24 @@ class Discriminator(nn.Module):
             nn.InstanceNorm2d(num_filters * 8),
             nn.LeakyReLU(0.2),
 
-            nn.Conv2d(num_filters * 8, 1, kernel_size=4, stride=2, padding=1),
+            nn.AdaptiveAvgPool2d((4, 4)),
             nn.LeakyReLU(0.2),
 
+        )
+        self.linear = nn.Sequential(
+            nn.Linear(8192, 64),
+            nn.InstanceNorm1d(64),
+            nn.LeakyReLU(0.2),
+
+            nn.Linear(64, 1),
             nn.Sigmoid(),
 
         )
 
     def forward(self, x):
         x = self.model(x)
+        x = torch.flatten(x, 0, -1)
+        x = self.linear(x)
         return x
 
 
