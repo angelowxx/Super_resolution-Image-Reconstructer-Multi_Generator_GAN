@@ -91,7 +91,6 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=4, stride=2, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2),
             nn.InstanceNorm2d(num_filters * 8),
             nn.LeakyReLU(0.2),
 
