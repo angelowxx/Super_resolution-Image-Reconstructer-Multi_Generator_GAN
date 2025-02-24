@@ -95,12 +95,11 @@ class Discriminator(nn.Module):
             nn.InstanceNorm2d(num_filters * 8),
             nn.LeakyReLU(0.2),
 
-            nn.AdaptiveMaxPool2d((4, 4)),
             nn.LeakyReLU(0.2),
 
         )
         self.linear = nn.Sequential(
-            nn.Linear(8192, 64),
+            nn.Linear(4096, 64),
             nn.LeakyReLU(0.2),
 
             nn.Linear(64, 1),
