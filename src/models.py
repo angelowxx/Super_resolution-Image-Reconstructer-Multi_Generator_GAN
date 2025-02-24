@@ -95,22 +95,12 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(0.2),
 
             nn.AdaptiveMaxPool2d((2, 4)),
-            nn.LeakyReLU(0.2),
-
-        )
-        self.linear = nn.Sequential(
-            nn.Linear(4096, 64),
-            nn.LeakyReLU(0.2),
-
-            nn.Linear(64, 1),
             nn.Sigmoid(),
 
         )
 
     def forward(self, x):
         x = self.model(x)
-        x = torch.flatten(x, 1, -1)
-        x = self.linear(x)
         return x
 
 
