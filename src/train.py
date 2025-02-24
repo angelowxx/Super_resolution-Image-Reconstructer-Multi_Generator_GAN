@@ -60,10 +60,6 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_dicriminator)
 
-    scheduler = optim.lr_scheduler.SequentialLR
-
-    warmstartLR = optim.lr_scheduler.LinearLR
-
     cosineLR = optim.lr_scheduler.CosineAnnealingLR
 
     lr_scheduler = cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/2)
