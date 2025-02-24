@@ -70,7 +70,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         optimizer=g_optimizer,
         schedulers=[
             warmstartLR(optimizer=g_optimizer, start_factor=0.1, total_iters=warmUp_epochs),
-            cosineLR(optimizer=g_optimizer, T_max=num_epochs-warmUp_epochs)
+            cosineLR(optimizer=g_optimizer, T_max=num_epochs-warmUp_epochs, eta_min=lr_generator/10)
         ],
         milestones=[warmUp_epochs]
     )
@@ -78,7 +78,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         optimizer=d_optimizer,
         schedulers=[
             warmstartLR(optimizer=d_optimizer, start_factor=0.1, total_iters=warmUp_epochs),
-            cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs)
+            cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/10)
         ],
         milestones=[warmUp_epochs]
     )
