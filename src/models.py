@@ -107,7 +107,7 @@ class Discriminator(nn.Module):
     def forward(self, x):
         x = self.model(x)
         print(x.size())
-        x = torch.flatten(x, 0, -1)
+        x = torch.flatten(x, 1, -1)
         x = self.linear(x)
         return x
 
