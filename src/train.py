@@ -53,8 +53,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
                                              weights_only=True))
         discriminator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth'),
                                                  weights_only=True))
-        lr_generator = lr_generator/10
-        lr_dicriminator = lr_dicriminator/10
+        lr_generator = lr_generator/2
+        lr_dicriminator = lr_dicriminator/2
         prefix = "Post-Training"
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
@@ -66,22 +66,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
     cosineLR = optim.lr_scheduler.CosineAnnealingLR
 
-    lr_scheduler = scheduler(
-        optimizer=g_optimizer,
-        schedulers=[
-            warmstartLR(optimizer=g_optimizer, start_factor=0.1, total_iters=warmUp_epochs),
-            cosineLR(optimizer=g_optimizer, T_max=num_epochs-warmUp_epochs, eta_min=lr_generator/10)
-        ],
-        milestones=[warmUp_epochs]
-    )
-    d_lr_scheduler = scheduler(
-        optimizer=d_optimizer,
-        schedulers=[
-            warmstartLR(optimizer=d_optimizer, start_factor=0.1, total_iters=warmUp_epochs),
-            cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/10)
-        ],
-        milestones=[warmUp_epochs]
-    )
+    lr_scheduler = cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/2)
+    d_lr_scheduler = cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/2)
 
     # Define paths
     train_folder_path = os.path.join(os.getcwd(), 'data', 'train')
