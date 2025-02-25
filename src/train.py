@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 5
+nums_epoch = 25
 warmUp_epochs = nums_epoch // 5
 
 
@@ -38,7 +38,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     os.makedirs(f"results", exist_ok=True)
 
     lr_generator = 1e-4
-    lr_dicriminator = lr_generator/2
+    lr_dicriminator = lr_generator / 2
 
     g_criterion = torch.nn.L1Loss()
 
@@ -51,10 +51,11 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     if continue_training:
         generator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_generator_model_0.pth'),
                                              weights_only=True))
-        discriminator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth'),
-                                                 weights_only=True))
-        lr_generator = lr_generator/5
-        lr_dicriminator = lr_dicriminator/5
+        discriminator.load_state_dict(
+            torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth'),
+                       weights_only=True))
+        lr_generator = lr_generator / 5
+        lr_dicriminator = lr_dicriminator / 5
         prefix = "Post-Training"
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
@@ -76,7 +77,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.01
+    split_ratio = 0.8
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -107,18 +108,18 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         lr_scheduler.step()
 
         d_lr_scheduler.step()
-        if (epoch+1) % 5 == 0:
+        if (epoch + 1) % 5 == 0:
             validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
 
         psnr, ssim = compute_score(generator, val_loader, device)
         psnrs.append(psnr / 30)
         ssims.append(ssim)
-        idx.append(epoch+1)
-
+        idx.append(epoch + 1)
 
     # Save the generator model's state_dict
     torch.save(generator.state_dict(), os.path.join(f'results', f'{prefix}_generator_model_{dist.get_rank()}.pth'))
-    torch.save(discriminator.state_dict(), os.path.join(f'results', f'{prefix}_discriminator_model_{dist.get_rank()}.pth'))
+    torch.save(discriminator.state_dict(),
+               os.path.join(f'results', f'{prefix}_discriminator_model_{dist.get_rank()}.pth'))
     # Plotting the loss curve
     plt.figure(figsize=(10, 6))
     plt.plot(idx, psnrs, marker='o', linestyle='-', color='b', label='PNSR/30')
@@ -137,7 +138,6 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
 def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
                     , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer, prefix):
-
     description = prefix
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     sum_g_loss = 0
@@ -152,7 +152,7 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
         d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
 
         g_loss, com_loss, p_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
-                                 g_criterion, g_optimizer)
+                                                             g_criterion, g_optimizer)
 
         sum_g_loss += g_loss
         sum_d_loss += d_loss
@@ -160,12 +160,12 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
         sum_p_loss += p_loss
         sum_g_d_loss += g_d_loss
 
-        t.set_postfix(g=sum_g_loss/(batch_idx+1), d=sum_d_loss/(batch_idx+1))
+        t.set_postfix(g=sum_g_loss / (batch_idx + 1), d=sum_d_loss / (batch_idx + 1))
 
     avg_loss = sum_g_loss / len(t)
 
     print(f"Epoch [{epoch + 1}/{num_epochs}] {description} Loss: {avg_loss:.6f}")
-    print(f"com_loss: {sum_c_loss/len(t)}, p_loss: {sum_p_loss/len(t)}, g_d_loss: {sum_g_d_loss/len(t)}")
+    print(f"com_loss: {sum_c_loss / len(t)}, p_loss: {sum_p_loss / len(t)}, g_d_loss: {sum_g_d_loss / len(t)}")
     return avg_loss
 
 
@@ -184,7 +184,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
         real_preds = discriminator(hr_imgs)
 
     com_loss = g_criterion(sr_images, hr_imgs)
-    p_loss = torch.tensor(0) # perceptal_loss(sr_images, hr_imgs, vgg_extractor)
+    p_loss = torch.tensor(0)  # perceptal_loss(sr_images, hr_imgs, vgg_extractor)
     g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
     g_loss = com_loss + g_d_loss
 
@@ -262,7 +262,7 @@ def compute_score(model, val_loader, device):
     t = tqdm(val_loader, desc=f"validating:")
     cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if cnt == 5:
+        if cnt == 50:
             break
         psnr = 0
         ssim = 0
@@ -281,13 +281,12 @@ def compute_score(model, val_loader, device):
         ssim /= hr_imgs.size(0)
         sum_psnr += psnr
         sum_ssim += ssim
-        t.set_postfix(psnr=sum_psnr/cnt, ssim=sum_ssim/cnt)
+        t.set_postfix(psnr=sum_psnr / cnt, ssim=sum_ssim / cnt)
 
-    return sum_psnr/cnt, sum_ssim/cnt
+    return sum_psnr / cnt, sum_ssim / cnt
 
 
 if __name__ == "__main__":
-
     continue_training = False
     prefix = "Training"
 
