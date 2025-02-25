@@ -107,8 +107,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         lr_scheduler.step()
 
         d_lr_scheduler.step()
-
-        validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
+        if (epoch+1) % 5 == 0:
+            validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
 
         psnr, ssim = compute_score(generator, val_loader, device)
         psnrs.append(psnr / 30)
@@ -288,7 +288,7 @@ def compute_score(model, val_loader, device):
 
 if __name__ == "__main__":
 
-    continue_training = False
+    continue_training = True
     prefix = "Training"
 
     world_size = torch.cuda.device_count()
