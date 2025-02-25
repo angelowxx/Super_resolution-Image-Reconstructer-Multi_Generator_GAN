@@ -184,7 +184,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
         real_preds = discriminator(hr_imgs)
 
     com_loss = g_criterion(sr_images, hr_imgs)
-    p_loss = 0 # perceptal_loss(sr_images, hr_imgs, vgg_extractor)
+    p_loss = torch.tensor(0) # perceptal_loss(sr_images, hr_imgs, vgg_extractor)
     g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
     g_loss = com_loss + g_d_loss
 
@@ -288,7 +288,7 @@ def compute_score(model, val_loader, device):
 
 if __name__ == "__main__":
 
-    continue_training = True
+    continue_training = False
     prefix = "Training"
 
     world_size = torch.cuda.device_count()
