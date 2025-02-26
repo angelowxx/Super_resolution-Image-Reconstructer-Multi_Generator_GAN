@@ -206,12 +206,12 @@ class ReconstructionLoss(nn.Module):
 
     def total_variation_loss(self, image, reversed_edges):
         # Total Variation Loss (Smoothness penalty)
-        diff_i = image[:, :, :, 1:] - image[:, :, :, :-1]  # Horizontal difference
+        diff_i = image[:, :, 1:, 1:] - image[:, :, 1:, :-1]  # Horizontal difference
 
-        diff_j = image[:, :, 1:, :] - image[:, :, :-1, :]  # Vertical difference
+        diff_j = image[:, :, 1:, 1:] - image[:, :, :-1, 1:]  # Vertical difference
 
-        reversed_edges = reversed_edges[:, :, 1:-1, 1:-1].to(image.device)
-        diff = (torch.abs(diff_i[:, :, 1:-1, :]) + torch.abs(diff_j[:, :, :, 1:-1])) * reversed_edges
+        reversed_edges = reversed_edges[:, :, 1:, 1:].to(image.device)
+        diff = (torch.abs(diff_i) + torch.abs(diff_j)) * reversed_edges
         tv_loss = torch.sum(diff) / torch.sum(reversed_edges)
 
         return tv_loss
