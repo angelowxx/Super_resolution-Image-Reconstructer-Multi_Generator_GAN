@@ -5,7 +5,9 @@ import numpy as np
 import torch
 import torchvision.transforms as transforms
 from PIL import Image, UnidentifiedImageError
+from torch import nn
 from torch.utils.data import Dataset
+import torch.nn.functional as F
 
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
@@ -158,3 +160,76 @@ def perceptal_loss(sr_imgs, hr_imgs, feature_extractor):
 
 def load_image():
     print()
+
+
+class ReconstructionLoss(nn.Module):
+    def __init__(self):
+        """
+        Reconstruction loss with edge emphasis.
+        :param alpha: Weight for the edge loss component.
+        """
+        super(ReconstructionLoss, self).__init__()
+        self.sobel_x = torch.tensor([[-5, 0, 5],
+                                     [-5, 0, 5],
+                                     [-5, 0, 5]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+
+        self.sobel_y = torch.tensor([[-5, -5, -5],
+                                     [0, 0, 0],
+                                     [5, 5, 5]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        self.mean_filter = torch.tensor([[1 / 9, 1 / 9, 1 / 9],
+                                         [1 / 9, 1 / 9, 1 / 9],
+                                         [1 / 9, 1 / 9, 1 / 9]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+
+    def min_max_scale(self, x, new_mean=0, new_std=1):
+        mean = torch.mean(x)
+        std = torch.std(x)
+        x = (x - mean) / std
+        return x * new_std + new_mean
+
+    def high_pass_filter(self, images):
+        # Apply Sobel filters
+        sobel_x = self.sobel_x.expand(3, 1, 3, 3)
+        sobel_y = self.sobel_y.expand(3, 1, 3, 3)
+        mean_filter = self.mean_filter.expand(3, 1, 3, 3)
+        edges_x = torch.abs(F.conv2d(images, sobel_x, padding=1, groups=3))  # Horizontal edges
+        edges_y = torch.abs(F.conv2d(images, sobel_y, padding=1, groups=3))  # Vertical edges
+
+        # Combine edge maps
+        edges = torch.max(edges_x, edges_y)
+        for i in range(1):
+            edges = F.conv2d(edges, mean_filter, padding=1, groups=3)
+
+        edges = torch.clamp(self.min_max_scale(edges, 0.5, 0.5), 0.1, 0.9)
+
+        return edges
+
+    def total_variation_loss(self, image, reversed_edges):
+        # Total Variation Loss (Smoothness penalty)
+        diff_i_r = image[:, :, :, 1:] - image[:, :, :, :-1]  # Horizontal difference
+        diff_i_l = image[:, :, :, :-1] - image[:, :, :, 1:]  # Horizontal difference
+        diff_i = (diff_i_r[:, :, :, :-1] + diff_i_l[:, :, :, 1:]) / 2
+
+        diff_j_u = image[:, :, :-1, :] - image[:, :, 1:, :]  # Vertical difference
+        diff_j_b = image[:, :, 1:, :] - image[:, :, :-1, :]  # Vertical difference
+        diff_j = (diff_j_u[:, :, 1:, :] + diff_j_b[:, :, :-1, :]) / 2
+
+        reversed_edges = reversed_edges[:, :, 1:-1, 1:-1]
+        diff = ((diff_i[:, :, 1:-1, :] + diff_j[:, :, :, 1:-1]) / 2) * reversed_edges
+        tv_loss = torch.sum(torch.abs(diff)) / torch.sum(reversed_edges)
+
+        return tv_loss
+
+    def forward(self, original_images, target_images):
+        # L1 loss for pixel-wise similarity
+        edges = self.high_pass_filter(original_images)
+
+        reversed_edges = 1 - edges
+
+        diff = torch.abs(original_images - target_images)
+
+        weighted_diff = diff * edges
+
+        # Combine pixel loss and edge loss
+        edge_loss = torch.sum(weighted_diff) / torch.sum(edges)
+        tv_loss = self.total_variation_loss(target_images, reversed_edges)
+        return edge_loss, tv_loss

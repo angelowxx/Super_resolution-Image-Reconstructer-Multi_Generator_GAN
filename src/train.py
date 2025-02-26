@@ -14,13 +14,13 @@ from tqdm import tqdm
 from src.models import SRResNet, Discriminator, VGGFeatureExtractor
 from src.transformers import normalize_img_size, downward_img_quality
 from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order, interpolate_models, \
-    uniformity_loss, calculate_psnr, calculate_ssim, perceptal_loss
+    uniformity_loss, calculate_psnr, calculate_ssim, perceptal_loss, ReconstructionLoss
 from PIL import Image
 import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 30
+nums_epoch = 5
 warmUp_epochs = nums_epoch // 5
 
 
@@ -40,7 +40,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     lr_generator = 1e-4
     lr_dicriminator = lr_generator / 2
 
-    g_criterion = torch.nn.L1Loss()
+    g_criterion = ReconstructionLoss()
 
     generator = nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
 
@@ -78,7 +78,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     train_data = ImageDatasetWithTransforms(train_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.7
+    split_ratio = 0.01
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -184,10 +184,9 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     with torch.no_grad():
         real_preds = discriminator(hr_imgs)
 
-    com_loss = g_criterion(sr_images, hr_imgs)
-    p_loss = torch.tensor(0)  # perceptal_loss(sr_images, hr_imgs, vgg_extractor)
+    com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
     g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
-    g_loss = 2 * com_loss + g_d_loss
+    g_loss = 2 * com_loss + g_d_loss + tv_loss
 
     g_optimizer.zero_grad()
     g_loss.backward()
@@ -198,7 +197,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     del g_loss
     torch.cuda.empty_cache()  # Free unused memory
 
-    return loss_item, com_loss.item(), p_loss.item(), g_d_loss.item()
+    return loss_item, com_loss.item(), tv_loss.item(), g_d_loss.item()
 
 
 def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer):
@@ -263,7 +262,7 @@ def compute_score(model, val_loader, device):
     t = tqdm(val_loader, desc=f"validating:")
     cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if cnt == 50:
+        if cnt == 5:
             break
         psnr = 0
         ssim = 0
