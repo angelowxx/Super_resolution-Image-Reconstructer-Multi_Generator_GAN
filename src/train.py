@@ -108,7 +108,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
         lr_scheduler.step()
 
-        d_lr_scheduler.step()
+        # d_lr_scheduler.step()
+
         if (epoch + 1) % 5 == 0:
             validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
 
@@ -187,7 +188,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
     # g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
     g_d_loss = torch.tensor(0)
-    g_loss = 2 * com_loss + tv_loss#  + g_d_loss
+    g_loss = com_loss + tv_loss#  + g_d_loss
 
     g_optimizer.zero_grad()
     g_loss.backward()
