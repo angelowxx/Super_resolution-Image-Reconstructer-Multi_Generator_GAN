@@ -108,7 +108,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
         lr_scheduler.step()
 
-        # d_lr_scheduler.step()
+        d_lr_scheduler.step()
 
         if (epoch + 1) % 5 == 0:
             validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
@@ -151,13 +151,13 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        # d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
+        d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
 
         g_loss, com_loss, p_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
                                                              g_criterion, g_optimizer)
 
         sum_g_loss += g_loss
-        # sum_d_loss += d_loss
+        sum_d_loss += d_loss
         sum_c_loss += com_loss
         sum_p_loss += p_loss
         sum_g_d_loss += g_d_loss
@@ -176,19 +176,18 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     torch.autograd.set_detect_anomaly(True)
     # --- Train Generator ---
     generator.train()
-    # discriminator.eval()
+    discriminator.eval()
 
     sr_images = generator(lr_imgs)
 
-    # fake_preds = discriminator(sr_images)
+    fake_preds = discriminator(sr_images)
 
-    # with torch.no_grad():
-    #     real_preds = discriminator(hr_imgs)
+    with torch.no_grad():
+        real_preds = discriminator(hr_imgs)
 
     com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
-    # g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
-    g_d_loss = torch.tensor(0)
-    g_loss = com_loss + tv_loss#  + g_d_loss
+    g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
+    g_loss = com_loss + tv_loss + g_d_loss
 
     g_optimizer.zero_grad()
     g_loss.backward()
