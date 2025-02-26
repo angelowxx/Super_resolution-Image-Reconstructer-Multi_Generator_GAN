@@ -57,6 +57,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         lr_generator = lr_generator / 5
         lr_dicriminator = lr_dicriminator / 5
         prefix = "Post-Training"
+        nums_epoch = 20
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_dicriminator)
@@ -111,10 +112,10 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         if (epoch + 1) % 5 == 0:
             validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
 
-        psnr, ssim = compute_score(generator, val_loader, device)
-        psnrs.append(psnr / 30)
-        ssims.append(ssim)
-        idx.append(epoch + 1)
+            psnr, ssim = compute_score(generator, val_loader, device)
+            psnrs.append(psnr / 30)
+            ssims.append(ssim)
+            idx.append(epoch + 1)
 
     # Save the generator model's state_dict
     torch.save(generator.state_dict(), os.path.join(f'results', f'{prefix}_generator_model_{dist.get_rank()}.pth'))
