@@ -40,7 +40,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     lr_generator = 1e-4
     lr_dicriminator = lr_generator / 2
 
-    g_criterion = ReconstructionLoss()
+    g_criterion = ReconstructionLoss().to(device)
 
     generator = nn.parallel.DistributedDataParallel(SRResNet().to(device), device_ids=[rank])
 
@@ -287,7 +287,7 @@ def compute_score(model, val_loader, device):
 
 
 if __name__ == "__main__":
-    continue_training = True
+    continue_training = False
     prefix = "Training"
 
     world_size = torch.cuda.device_count()
