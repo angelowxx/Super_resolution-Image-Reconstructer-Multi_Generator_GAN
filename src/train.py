@@ -57,7 +57,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         lr_generator = lr_generator / 5
         lr_dicriminator = lr_dicriminator / 5
         prefix = "Post-Training"
-        nums_epoch = 20
+        num_epochs = 20
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_dicriminator)
