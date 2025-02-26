@@ -210,7 +210,7 @@ class ReconstructionLoss(nn.Module):
         diff_j = image[:, :, 1:, :] - image[:, :, :-1, :]  # Vertical difference
 
         reversed_edges = reversed_edges[:, :, 1:-1, 1:-1].to(image.device)
-        diff = ((torch.abs(diff_i[:, :, 1:-1, :]) + torch.abs(diff_j[:, :, :, 1:-1])) / 2) * reversed_edges
+        diff = (torch.abs(diff_i[:, :, 1:-1, :]) + torch.abs(diff_j[:, :, :, 1:-1])) * reversed_edges
         tv_loss = torch.sum(diff) / torch.sum(reversed_edges)
 
         return tv_loss
