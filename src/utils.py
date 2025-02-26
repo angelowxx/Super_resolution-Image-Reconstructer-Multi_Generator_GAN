@@ -158,6 +158,7 @@ def perceptal_loss(sr_imgs, hr_imgs, feature_extractor):
 
     return perceptual_loss
 
+
 def load_image():
     print()
 
