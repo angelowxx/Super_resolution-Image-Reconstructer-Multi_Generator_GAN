@@ -188,9 +188,9 @@ class ReconstructionLoss(nn.Module):
 
     def high_pass_filter(self, images):
         # Apply Sobel filters
-        sobel_x = self.sobel_x.expand(3, 1, 3, 3)
-        sobel_y = self.sobel_y.expand(3, 1, 3, 3)
-        mean_filter = self.mean_filter.expand(3, 1, 3, 3)
+        sobel_x = self.sobel_x.expand(3, 1, 3, 3).to(images.device)
+        sobel_y = self.sobel_y.expand(3, 1, 3, 3).to(images.device)
+        mean_filter = self.mean_filter.expand(3, 1, 3, 3).to(images.device)
         edges_x = torch.abs(F.conv2d(images, sobel_x, padding=1, groups=3))  # Horizontal edges
         edges_y = torch.abs(F.conv2d(images, sobel_y, padding=1, groups=3))  # Vertical edges
 
@@ -213,7 +213,7 @@ class ReconstructionLoss(nn.Module):
         diff_j_b = image[:, :, 1:, :] - image[:, :, :-1, :]  # Vertical difference
         diff_j = (diff_j_u[:, :, 1:, :] + diff_j_b[:, :, :-1, :]) / 2
 
-        reversed_edges = reversed_edges[:, :, 1:-1, 1:-1]
+        reversed_edges = reversed_edges[:, :, 1:-1, 1:-1].to(image.device)
         diff = ((diff_i[:, :, 1:-1, :] + diff_j[:, :, :, 1:-1]) / 2) * reversed_edges
         tv_loss = torch.sum(torch.abs(diff)) / torch.sum(reversed_edges)
 
