@@ -181,7 +181,7 @@ class ReconstructionLoss(nn.Module):
                                          [1 / 9, 1 / 9, 1 / 9],
                                          [1 / 9, 1 / 9, 1 / 9]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
 
-    def min_max_scale(self, x, new_mean=0, new_std=1):
+    def normalize(self, x, new_mean=0, new_std=1):
         mean = torch.mean(x)
         std = torch.std(x)
         x = (x - mean) / std
@@ -200,7 +200,7 @@ class ReconstructionLoss(nn.Module):
         for i in range(1):
             edges = F.conv2d(edges, mean_filter, padding=1, groups=3)
 
-        edges = torch.clamp(self.min_max_scale(edges, 0.5, 0.5), 0.1, 0.9)
+        edges = torch.clamp(self.normalize(edges, 0.5, 0.5), 0.1, 0.9)
 
         return edges
 
