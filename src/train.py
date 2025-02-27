@@ -57,7 +57,6 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         lr_generator = lr_generator / 5
         lr_dicriminator = lr_dicriminator / 5
         prefix = "Post-Training"
-        num_epochs = 20
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_dicriminator)
@@ -68,8 +67,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
     """lr_scheduler = cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/2)
     d_lr_scheduler = cosineLR(optimizer=d_optimizer, T_max=num_epochs - warmUp_epochs, eta_min=lr_dicriminator/2)"""
-    lr_scheduler = linearLR(optimizer=g_optimizer, start_factor=1, end_factor=0.001, total_iters=num_epochs)
-    d_lr_scheduler = linearLR(optimizer=d_optimizer, start_factor=1, end_factor=0.001, total_iters=num_epochs)
+    lr_scheduler = linearLR(optimizer=g_optimizer, start_factor=1, end_factor=0.2, total_iters=num_epochs)
+    d_lr_scheduler = linearLR(optimizer=d_optimizer, start_factor=1, end_factor=0.2, total_iters=num_epochs)
 
     # Define paths
     train_folder_path = os.path.join(os.getcwd(), 'data', 'train')
