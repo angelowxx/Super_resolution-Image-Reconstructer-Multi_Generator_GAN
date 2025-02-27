@@ -37,7 +37,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     # 确保结果保存目录存在
     os.makedirs(f"results", exist_ok=True)
 
-    lr_generator = 1e-4
+    lr_generator = 1e-5
     lr_dicriminator = lr_generator / 3
 
     g_criterion = ReconstructionLoss().to(device)
@@ -54,8 +54,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         discriminator.load_state_dict(
             torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth'),
                        weights_only=True))
-        lr_generator = lr_generator / 5
-        lr_dicriminator = lr_dicriminator / 5
+        # lr_generator = lr_generator / 5
+        # lr_dicriminator = lr_dicriminator / 5
         prefix = "Post-Training"
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
@@ -107,9 +107,9 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
                         , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer, prefix)
 
-        lr_scheduler.step()
+        # lr_scheduler.step()
 
-        d_lr_scheduler.step()
+        # d_lr_scheduler.step()
 
         if (epoch + 1) % 5 == 0:
             validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
