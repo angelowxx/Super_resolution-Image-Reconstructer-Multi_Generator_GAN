@@ -4,6 +4,7 @@ from collections import OrderedDict
 
 import torch
 from torch.utils.data import DataLoader
+from torchvision.transforms import transforms
 from tqdm import tqdm
 
 from src.models import SRResNet, ImageEnhancer
@@ -32,6 +33,7 @@ def evaluate_model(dataset, lr_path, hr_path):
 
     image_enhancer = ImageEnhancer()
 
+
     description = "evaluating"
     t = tqdm(eval_loader, desc=f"{description}")
     t_psnr = 0
@@ -43,6 +45,9 @@ def evaluate_model(dataset, lr_path, hr_path):
         with torch.no_grad():
             sr_imgs = model(lr_imgs)
         sr_imgs = image_enhancer.forward(sr_imgs)
+
+        normalize_size = transforms.Resize(sr_imgs.size(2), sr_imgs.size(3))
+        hr_imgs = normalize_size(hr_imgs)
 
         psnr = calculate_psnr(sr_imgs, hr_imgs)
         ssim = calculate_ssim(sr_imgs, hr_imgs)
