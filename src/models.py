@@ -25,7 +25,7 @@ class ResidualBlock(nn.Module):
         return out + residual
 
 
-class ImageEnhancer(nn.Module):
+class ImageEnhancer():
 
     def __init__(self):
         super(ImageEnhancer, self).__init__()
@@ -76,8 +76,6 @@ class SRResNet(nn.Module):
         # 最后一层卷积，将特征映射到 RGB 通道
         self.conv3 = nn.Conv2d(num_features, in_channels, kernel_size=9, padding=4)
 
-        self.image_enhancer = ImageEnhancer()
-
     def forward(self, x):
         out1 = self.relu(self.conv1(x))
         out = self.residual_blocks(out1)
@@ -85,7 +83,6 @@ class SRResNet(nn.Module):
         out = out + out1  # 残差连接
         out = self.upsample(out)
         out = self.conv3(out)
-        out = self.image_enhancer(out)
         return out
 
 
