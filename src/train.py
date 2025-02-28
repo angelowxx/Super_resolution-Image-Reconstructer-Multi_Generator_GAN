@@ -109,7 +109,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
         lr_scheduler.step()
 
-        d_lr_scheduler.step()
+        # d_lr_scheduler.step()
 
         if (epoch + 1) % 5 == 0:
             validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
