@@ -16,7 +16,7 @@ def evaluate_model(dataset, lr_path, hr_path):
     model_path = os.path.join(os.getcwd(), 'results', 'Training_generator_model_0.pth')
     eval_folder_path = dataset
     eval_data = ImageDataset(eval_folder_path, lr_path, hr_path)
-    eval_loader = DataLoader(eval_data, batch_size=6)
+    eval_loader = DataLoader(eval_data, batch_size=1)
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model = SRResNet().to(device)
