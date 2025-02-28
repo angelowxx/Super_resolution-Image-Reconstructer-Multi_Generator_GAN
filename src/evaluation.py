@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.models import SRResNet
+from src.models import SRResNet, ImageEnhancer
 from src.transformers import add_noise, downward_img_quality
 from src.utils import ImageDatasetWithTransforms, calculate_psnr, calculate_ssim, ImageDataset
 
@@ -30,6 +30,8 @@ def evaluate_model(dataset, lr_path, hr_path):
     model.load_state_dict(new_state_dict)
     model.eval()
 
+    image_enhancer = ImageEnhancer()
+
     description = "evaluating"
     t = tqdm(eval_loader, desc=f"{description}")
     t_psnr = 0
@@ -39,6 +41,7 @@ def evaluate_model(dataset, lr_path, hr_path):
         lr_imgs = lr_imgs.to(device)
 
         sr_imgs = model(lr_imgs)
+        sr_imgs = image_enhancer.forward(sr_imgs)
 
         psnr = calculate_psnr(sr_imgs, hr_imgs)
         ssim = calculate_ssim(sr_imgs, hr_imgs)
