@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 5
+nums_epoch = 70
 warmUp_epochs = nums_epoch // 5
 
 
@@ -79,7 +79,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     val_subset = ImageDatasetWithTransforms(val_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.08
+    split_ratio = 0.8
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -239,7 +239,7 @@ def validate(model, val_loader, device, epoch, desc, rank):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
         sr_imgs = model(lr_imgs)
-        # sr_imgs = image_enhancer.forward(sr_imgs)
+        sr_imgs = image_enhancer.forward(sr_imgs)
         # 对每个样本拼接：低质量图 | 超分结果 | 原始图
         comp_list = []
         for i in range(hr_imgs.size(0)):
@@ -268,7 +268,7 @@ def compute_score(model, val_loader, device):
     t = tqdm(val_loader, desc=f"validating:")
     cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if cnt == 5:
+        if cnt == 50:
             break
         psnr = 0
         ssim = 0
@@ -279,7 +279,7 @@ def compute_score(model, val_loader, device):
         with torch.no_grad():
             sr_imgs = model(lr_imgs)
 
-        # sr_imgs = image_enhancer.forward(sr_imgs)
+        sr_imgs = image_enhancer.forward(sr_imgs)
 
         for i in range(hr_imgs.size(0)):
             psnr += calculate_psnr(sr_imgs[i], hr_imgs[i])
