@@ -42,6 +42,9 @@ def evaluate_model(dataset, lr_path, hr_path):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
+        normalize_size = transforms.Resize((lr_imgs.size(2)/4, lr_imgs.size(3)/4))
+        lr_imgs = normalize_size(lr_imgs)
+
         with torch.no_grad():
             sr_imgs = model(lr_imgs)
         sr_imgs = image_enhancer.forward(sr_imgs)
