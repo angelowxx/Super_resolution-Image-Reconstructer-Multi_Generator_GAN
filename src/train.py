@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 20
+nums_epoch = 5
 warmUp_epochs = nums_epoch // 5
 
 
@@ -91,8 +91,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     val_sampler = DistributedSampler(val_subset, num_replicas=world_size, rank=rank, shuffle=True)
 
     # Create DataLoaders
-    train_loader = DataLoader(train_subset, batch_size=8, sampler=train_sampler, num_workers=0)
-    val_loader = DataLoader(val_subset, batch_size=8, sampler=val_sampler, num_workers=0)
+    train_loader = DataLoader(train_subset, batch_size=12, sampler=train_sampler, num_workers=0)
+    val_loader = DataLoader(val_subset, batch_size=12, sampler=val_sampler, num_workers=0)
 
     psnrs = []
     ssims = []
@@ -268,7 +268,7 @@ def compute_score(model, val_loader, device):
     t = tqdm(val_loader, desc=f"validating:")
     cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if cnt == 50:
+        if cnt == 5:
             break
         psnr = 0
         ssim = 0
