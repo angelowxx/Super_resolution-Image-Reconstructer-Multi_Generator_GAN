@@ -57,6 +57,7 @@ class ImageDataset(Dataset):
         self.folder_path = folder_path
         self.path1 = path1
         self.path2 = path2
+        self.transform = transforms.ToTensor()
 
         self.image1_files = [f for f in os.listdir(os.path.join(folder_path, path1)) if
                              f.endswith(('jpg', 'jpeg', 'png', 'JPG'))]
@@ -86,7 +87,7 @@ class ImageDataset(Dataset):
                 raise IndexError  # Skip this index
             return self.__getitem__(idx + 1)
 
-        return image1, image2
+        return self.transform(image1), self.transform(image2)
 
 
 # 将 tensor 转换为 PIL Image
