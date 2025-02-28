@@ -40,7 +40,8 @@ def evaluate_model(dataset, lr_path, hr_path):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        sr_imgs = model(lr_imgs)
+        with torch.no_grad():
+            sr_imgs = model(lr_imgs)
         sr_imgs = image_enhancer.forward(sr_imgs)
 
         psnr = calculate_psnr(sr_imgs, hr_imgs)
