@@ -56,8 +56,7 @@ if __name__ == "__main__":
     print(f'evaluating!')
     cmdline_parser = argparse.ArgumentParser('evaluating sr')
     cmdline_parser.add_argument('-D', '--data_dir',
-                                default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                     '..', 'data'),
+                                default=os.path.join(os.getcwd(), 'eval'),
                                 help='where the evaluation dataset stored')
     cmdline_parser.add_argument('-lr', '--lr_dir',
                                 default='LRbicx4',
