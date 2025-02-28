@@ -36,7 +36,7 @@ def evaluate_model(dataset, lr_path, hr_path):
     t = tqdm(eval_loader, desc=f"{description}")
     t_psnr = 0
     t_ssim = 0
-    for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
+    for batch_idx, (lr_imgs, hr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
