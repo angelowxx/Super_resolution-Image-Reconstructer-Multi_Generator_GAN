@@ -46,7 +46,7 @@ def evaluate_model(dataset, lr_path, hr_path):
             sr_imgs = model(lr_imgs)
         sr_imgs = image_enhancer.forward(sr_imgs)
 
-        normalize_size = transforms.Resize(sr_imgs.size(2), sr_imgs.size(3))
+        normalize_size = transforms.Resize((sr_imgs.size(2), sr_imgs.size(3)))
         hr_imgs = normalize_size(hr_imgs)
 
         psnr = calculate_psnr(sr_imgs, hr_imgs)
