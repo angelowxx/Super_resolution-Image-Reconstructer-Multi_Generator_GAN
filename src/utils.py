@@ -71,7 +71,7 @@ class ImageDataset(Dataset):
         try:
             image1 = Image.open(img1_path).convert("RGB")
         except (UnidentifiedImageError, IOError) as e:
-            if idx == len(self.image1_files):
+            if idx >= len(self.image1_files):
                 print(f"Error loading image {img1_path}: {e}")
                 raise IndexError  # Skip this index
             return self.__getitem__(idx+1)
@@ -79,7 +79,7 @@ class ImageDataset(Dataset):
         try:
             image2 = Image.open(img2_path).convert("RGB")
         except (UnidentifiedImageError, IOError) as e:
-            if idx == len(self.image1_files):
+            if idx >= len(self.image1_files):
                 print(f"Error loading image {img1_path}: {e}")
                 raise IndexError  # Skip this index
             return self.__getitem__(idx + 1)
