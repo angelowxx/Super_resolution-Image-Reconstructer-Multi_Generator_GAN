@@ -37,7 +37,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     # 确保结果保存目录存在
     os.makedirs(f"results", exist_ok=True)
 
-    lr_generator = 1e-5
+    lr_generator = 1e-4
     lr_dicriminator = lr_generator / 3
 
     g_criterion = ReconstructionLoss().to(device)
@@ -54,8 +54,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         discriminator.load_state_dict(
             torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth'),
                        weights_only=True))
-        # lr_generator = lr_generator / 5
-        # lr_dicriminator = lr_dicriminator / 5
+        lr_generator = lr_generator / 5
+        lr_dicriminator = lr_dicriminator / 5
         prefix = "Post-Training"
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
@@ -107,9 +107,9 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
                         , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer, prefix)
 
-        # lr_scheduler.step()
+        lr_scheduler.step()
 
-        # d_lr_scheduler.step()
+        d_lr_scheduler.step()
 
         if (epoch + 1) % 5 == 0:
             validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
@@ -152,13 +152,13 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
+        # d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
 
         g_loss, com_loss, p_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
                                                              g_criterion, g_optimizer)
 
         sum_g_loss += g_loss
-        sum_d_loss += d_loss
+        # sum_d_loss += d_loss
         sum_c_loss += com_loss
         sum_p_loss += p_loss
         sum_g_d_loss += g_d_loss
@@ -181,14 +181,15 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
 
     sr_images = generator(lr_imgs)
 
-    fake_preds = discriminator(sr_images)
+    # fake_preds = discriminator(sr_images)
 
-    with torch.no_grad():
-        real_preds = discriminator(hr_imgs)
+    # with torch.no_grad():
+    #     real_preds = discriminator(hr_imgs)
 
     com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
-    g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
-    g_loss = com_loss + tv_loss + g_d_loss
+    # g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
+    g_d_loss = torch.tensor(0)
+    g_loss = com_loss + tv_loss#  + g_d_loss
 
     g_optimizer.zero_grad()
     g_loss.backward()
@@ -261,6 +262,7 @@ def validate(model, val_loader, device, epoch, desc, rank):
 
 def compute_score(model, val_loader, device):
     model.eval()
+    image_enhancer = ImageEnhancer()
     sum_psnr = 0
     sum_ssim = 0
     t = tqdm(val_loader, desc=f"validating:")
@@ -276,6 +278,8 @@ def compute_score(model, val_loader, device):
         lr_imgs = lr_imgs.to(device)
         with torch.no_grad():
             sr_imgs = model(lr_imgs)
+
+        sr_imgs = image_enhancer.forward(sr_imgs)
 
         for i in range(hr_imgs.size(0)):
             psnr += calculate_psnr(sr_imgs[i], hr_imgs[i])
