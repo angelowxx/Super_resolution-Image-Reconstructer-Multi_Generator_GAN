@@ -141,6 +141,7 @@ def uniformity_loss(embeddings, t=2):
 def calculate_psnr(img1, img2):
     img1_np = np.array(img1.cpu(), dtype=np.float32)
     img2_np = np.array(img2.cpu(), dtype=np.float32)
+    print(f'{img1.size()}, {img2.size()}')
     return psnr(img1_np, img2_np, data_range=1)  # 255 是最大像素值
 
 
