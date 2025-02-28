@@ -52,9 +52,9 @@ def evaluate_model(dataset, lr_path, hr_path):
         psnr = calculate_psnr(sr_imgs, hr_imgs)
         ssim = calculate_ssim(sr_imgs, hr_imgs)
 
-        t.set_postfix(psnr=psnr, ssim=ssim)
         t_psnr += psnr
         t_ssim += ssim
+        t.set_postfix(psnr=t_psnr/(batch_idx+1), ssim=t_ssim/(batch_idx+1))
     print(f'average psnr = {t_psnr / len(t)}, average ssim = {t_ssim / len(t)}')
 
 
