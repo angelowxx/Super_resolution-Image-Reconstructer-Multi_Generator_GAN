@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 from torchvision.models import VGG19_Weights
+import torch.nn.functional as F
 
 from src.variables import clip_width, clip_height
 
@@ -22,6 +23,21 @@ class ResidualBlock(nn.Module):
         out = self.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         return out + residual
+
+
+class ImageEnhancer(nn.Module):
+
+    def __init__(self):
+        super(ImageEnhancer, self).__init__()
+        self.kernel = torch.tensor([[-1 / 8, -1 / 8, -1 / 8],
+                                    [-1 / 8, 1, -1 / 8],
+                                    [-1 / 8, -1 / 8, -1 / 8]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+
+    def forward(self, x):
+        kernel = self.kernel.expand(3, 1, 3, 3).to(x.device)
+        x = x + F.conv2d(x, kernel, padding=1, groups=3)
+        x = torch.clamp(x, 0, 1)
+        return x
 
 
 class SRResNet(nn.Module):
@@ -60,6 +76,8 @@ class SRResNet(nn.Module):
         # 最后一层卷积，将特征映射到 RGB 通道
         self.conv3 = nn.Conv2d(num_features, in_channels, kernel_size=9, padding=4)
 
+        self.image_enhancer = ImageEnhancer()
+
     def forward(self, x):
         out1 = self.relu(self.conv1(x))
         out = self.residual_blocks(out1)
@@ -67,6 +85,7 @@ class SRResNet(nn.Module):
         out = out + out1  # 残差连接
         out = self.upsample(out)
         out = self.conv3(out)
+        out = self.image_enhancer(out)
         return out
 
 
