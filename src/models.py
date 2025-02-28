@@ -27,15 +27,16 @@ class ResidualBlock(nn.Module):
 
 class ImageEnhancer():
 
-    def __init__(self):
+    def __init__(self, factor=1):
         super(ImageEnhancer, self).__init__()
         self.kernel = torch.tensor([[-1 / 8, -1 / 8, -1 / 8],
                                     [-1 / 8, 1, -1 / 8],
                                     [-1 / 8, -1 / 8, -1 / 8]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        self.factor = factor
 
     def forward(self, x):
         kernel = self.kernel.expand(3, 1, 3, 3).to(x.device)
-        x = x + F.conv2d(x, kernel, padding=1, groups=3)
+        x = x + self.factor * F.conv2d(x, kernel, padding=1, groups=3)
         x = torch.clamp(x, 0, 1)
         return x
 
