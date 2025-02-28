@@ -55,6 +55,8 @@ class ImageDataset(Dataset):
             transform (callable, optional): Transformations to apply to images.
         """
         self.folder_path = folder_path
+        self.path1 = path1
+        self.path2 = path2
 
         self.image1_files = [f for f in os.listdir(os.path.join(folder_path, path1)) if
                              f.endswith(('jpg', 'jpeg', 'png', 'JPG'))]
@@ -66,8 +68,8 @@ class ImageDataset(Dataset):
         return len(self.image1_files)
 
     def __getitem__(self, idx):
-        img1_path = os.path.join(self.folder_path, self.image1_files[idx])
-        img2_path = os.path.join(self.folder_path, self.image2_files[idx])
+        img1_path = os.path.join(self.folder_path, self.path1, self.image1_files[idx])
+        img2_path = os.path.join(self.folder_path, self.path2, self.image2_files[idx])
         try:
             image1 = Image.open(img1_path).convert("RGB")
         except (UnidentifiedImageError, IOError) as e:
