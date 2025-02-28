@@ -11,7 +11,7 @@ from torch import nn
 from torch.utils.data import DataLoader, DistributedSampler, random_split
 from tqdm import tqdm
 
-from src.models import SRResNet, Discriminator, VGGFeatureExtractor
+from src.models import SRResNet, Discriminator, VGGFeatureExtractor, ImageEnhancer
 from src.transformers import normalize_img_size, downward_img_quality
 from src.utils import ImageDatasetWithTransforms, shuffle_lists_in_same_order, interpolate_models, \
     uniformity_loss, calculate_psnr, calculate_ssim, perceptal_loss, ReconstructionLoss
@@ -231,12 +231,14 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
 
 def validate(model, val_loader, device, epoch, desc, rank):
     model.eval()
+    image_enhancer = ImageEnhancer()
     with torch.no_grad():
         # 从验证集中获取一个batch
         hr_imgs, lr_imgs = next(iter(val_loader))
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
         sr_imgs = model(lr_imgs)
+        sr_imgs = image_enhancer.forward(sr_imgs)
         # 对每个样本拼接：低质量图 | 超分结果 | 原始图
         comp_list = []
         for i in range(hr_imgs.size(0)):
