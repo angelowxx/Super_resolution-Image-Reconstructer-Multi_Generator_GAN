@@ -20,7 +20,7 @@ def evaluate_model(dataset, lr_path, hr_path):
 
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model = SRResNet().to(device)
-    state_dict = torch.load(model_path, map_location=device)
+    state_dict = torch.load(model_path, map_location=device, weights_only=True)
     new_state_dict = OrderedDict()
     for k, v in state_dict.items():
         # Remove the "module." prefix if present
