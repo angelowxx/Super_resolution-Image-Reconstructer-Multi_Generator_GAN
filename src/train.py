@@ -38,7 +38,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     os.makedirs(f"results", exist_ok=True)
 
     lr_generator = 1e-4
-    lr_dicriminator = lr_generator / 3
+    lr_dicriminator = lr_generator / 2
 
     g_criterion = ReconstructionLoss().to(device)
 
