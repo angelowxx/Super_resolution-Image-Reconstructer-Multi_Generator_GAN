@@ -207,7 +207,7 @@ class ReconstructionLoss(nn.Module):
         for i in range(1):
             edges = F.conv2d(edges, mean_filter, padding=1, groups=3)
 
-        edges = torch.clamp(self.normalize(edges, 0.8, 0.2), 1, 1.2)
+        edges = torch.clamp(self.normalize(edges, 1, 0.2), 0.8, 1.2)
 
         return edges
 
@@ -219,7 +219,7 @@ class ReconstructionLoss(nn.Module):
 
         reversed_edges = reversed_edges[:, :, 1:, 1:].to(image.device)
         diff = (torch.abs(diff_i) + torch.abs(diff_j)) * reversed_edges
-        tv_loss = -1 * torch.sum(diff) / torch.sum(reversed_edges)
+        tv_loss = torch.mean(diff)
 
         return tv_loss
 
