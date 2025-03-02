@@ -207,7 +207,7 @@ class ReconstructionLoss(nn.Module):
 
         # Combine edge maps
         edges = torch.max(edges_x, edges_y)
-        for i in range(1):
+        for i in range(0):
             edges = F.conv2d(edges, mean_filter, padding=1, groups=3)
 
         edges = torch.clamp(self.normalize(edges, 1, 0.2), 0, 1)
