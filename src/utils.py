@@ -187,9 +187,9 @@ class ReconstructionLoss(nn.Module):
         self.mean_filter = torch.tensor([[1 / 9, 1 / 9, 1 / 9],
                                          [1 / 9, 1, 1 / 9],
                                          [1 / 9, 1 / 9, 1 / 9]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        self.diff_kernel = torch.tensor([[-1, -1, -1],
-                                         [-1, 8, -1],
-                                         [-1, -1, -1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        self.diff_kernel = torch.tensor([[-1/8, -1/8, -1/8],
+                                         [-1/8, 1, -1/8],
+                                         [-1/8, -1/8, -1/8]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
 
     def normalize(self, x, new_mean=0, new_std=1):
         mean = torch.mean(x)
