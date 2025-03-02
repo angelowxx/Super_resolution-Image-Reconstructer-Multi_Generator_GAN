@@ -187,6 +187,9 @@ class ReconstructionLoss(nn.Module):
         self.mean_filter = torch.tensor([[1 / 9, 1 / 9, 1 / 9],
                                          [1 / 9, 1, 1 / 9],
                                          [1 / 9, 1 / 9, 1 / 9]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        self.diff_kernel = torch.tensor([[-1, -1, -1],
+                                         [-1, 8, -1],
+                                         [-1, -1, -1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0)
 
     def normalize(self, x, new_mean=0, new_std=1):
         mean = torch.mean(x)
@@ -212,10 +215,11 @@ class ReconstructionLoss(nn.Module):
         return edges
 
     def total_variation_loss(self, image, reversed_edges):
+        diff_kernel = self.diff_kernel.expand(3, 1, 3, 3).to(image.device)
         # Total Variation Loss (Smoothness penalty)
-        diff = 4 * image[:, :, 1:-1, 1:-1] - image[:, :, 1:-1, :-2] - image[:, :, 1:-1, 2:] - image[:, :, 2:, 1:-1] - image[:, :, :-2, 1:-1]
+        diff = F.conv2d(image, diff_kernel, padding=1, groups=3)
 
-        reversed_edges = reversed_edges[:, :, 1:-1, 1:-1].to(image.device)
+        reversed_edges = reversed_edges.to(image.device)
         diff = torch.abs(diff) * reversed_edges
         tv_loss = torch.mean(diff)
 
