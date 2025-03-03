@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 30
+nums_epoch = 50
 warmUp_epochs = nums_epoch // 5
 
 
