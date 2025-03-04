@@ -210,7 +210,7 @@ class ReconstructionLoss(nn.Module):
         for i in range(0):
             edges = F.conv2d(edges, mean_filter, padding=1, groups=3)
 
-        edges = torch.clamp(self.normalize(edges, 0.8, 0.2), 0, 1)
+        edges = torch.clamp(self.normalize(edges, 0.5, 0.35), 0, 1)
 
         return edges
 
