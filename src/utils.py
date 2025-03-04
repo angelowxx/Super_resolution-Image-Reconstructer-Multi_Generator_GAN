@@ -221,7 +221,7 @@ class ReconstructionLoss(nn.Module):
 
         reversed_edges = reversed_edges.to(image.device)
         diff = torch.abs(diff) * reversed_edges
-        tv_loss = torch.mean(diff)
+        tv_loss = torch.sum(diff)/torch.sum(reversed_edges)
 
         return tv_loss
 
