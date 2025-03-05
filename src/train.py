@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 25
+nums_epoch = 5
 warmUp_epochs = nums_epoch // 5
 
 
@@ -79,7 +79,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     val_subset = ImageDatasetWithTransforms(val_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.7
+    split_ratio = 0.01
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -267,7 +267,7 @@ def compute_score(model, val_loader, device):
     t = tqdm(val_loader, desc=f"validating:")
     cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if cnt == 30:
+        if cnt == 3:
             break
         psnr = 0
         ssim = 0
