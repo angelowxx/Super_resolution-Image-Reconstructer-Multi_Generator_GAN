@@ -20,7 +20,7 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 5
+nums_epoch = 25
 warmUp_epochs = nums_epoch // 5
 
 
@@ -79,7 +79,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     val_subset = ImageDatasetWithTransforms(val_folder_path, normalize_img_size, downward_img_quality)
 
     # Define split sizes (e.g., 70% train, 30% validation)
-    split_ratio = 0.01
+    split_ratio = 0.7
     train_size = int(split_ratio * len(train_data))
     val_size = len(train_data) - train_size
 
@@ -114,10 +114,10 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         if (epoch + 1) % 5 == 0:
             validate(generator, val_loader, device, epoch, prefix, dist.get_rank())
 
-        psnr, ssim = compute_score(generator, val_loader, device)
-        psnrs.append(psnr / 30)
-        ssims.append(ssim)
-        idx.append(epoch + 1)
+            psnr, ssim = compute_score(generator, val_loader, device)
+            psnrs.append(psnr / 30)
+            ssims.append(ssim)
+            idx.append(epoch + 1)
 
     # Save the generator model's state_dict
     torch.save(generator.state_dict(), os.path.join(f'results', f'{prefix}_generator_model_{dist.get_rank()}.pth'))
@@ -268,7 +268,7 @@ def compute_score(model, val_loader, device):
     t = tqdm(val_loader, desc=f"validating:")
     cnt = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
-        if cnt == 3:
+        if cnt == 30:
             break
         psnr = 0
         ssim = 0
