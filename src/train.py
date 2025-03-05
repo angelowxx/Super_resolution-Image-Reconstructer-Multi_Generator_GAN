@@ -188,7 +188,6 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
 
     com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
     g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
-    g_d_loss = torch.tensor(0)
     g_loss = com_loss + tv_loss + g_d_loss
 
     g_optimizer.zero_grad()
