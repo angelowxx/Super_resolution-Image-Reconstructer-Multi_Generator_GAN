@@ -92,32 +92,45 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.model = nn.Sequential(
             # Input layer: (input_channels x H x W) -> (num_filters x H/2 x W/2)
-            nn.Conv2d(input_channels, num_filters, kernel_size=8, stride=2, padding=2),
-            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Conv2d(input_channels, num_filters, kernel_size=4, stride=2, padding=1),
             nn.InstanceNorm2d(num_filters),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters, num_filters * 2, kernel_size=4, stride=2, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2),
             nn.InstanceNorm2d(num_filters * 2),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 2, num_filters * 4, kernel_size=4, stride=2, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2),
             nn.InstanceNorm2d(num_filters * 4),
             nn.LeakyReLU(0.2),
 
             nn.Conv2d(num_filters * 4, num_filters * 8, kernel_size=4, stride=2, padding=1),
-            nn.MaxPool2d(kernel_size=3, stride=2),
             nn.InstanceNorm2d(num_filters * 8),
+            nn.LeakyReLU(0.2),
 
+            nn.Conv2d(num_filters * 8, num_filters * 8, kernel_size=4, stride=2, padding=1),
+            nn.InstanceNorm2d(num_filters * 8),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(num_filters * 8, num_filters * 8, kernel_size=4, stride=2, padding=1),
+            nn.InstanceNorm2d(num_filters * 8),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(num_filters * 8, num_filters * 8, kernel_size=4, stride=2, padding=1),
+            nn.InstanceNorm2d(num_filters * 8),
+            nn.LeakyReLU(0.2),
+
+            # Global average pooling instead of MaxPool
+            nn.AdaptiveAvgPool2d(1),
+
+            # Fully connected output layer
+            nn.Flatten(),
+            nn.Linear(num_filters * 8, 1),
             nn.Sigmoid(),
-
         )
 
     def forward(self, x):
-        x = self.model(x)
-        return x
+        return self.model(x)
 
 
 class VGGFeatureExtractor(nn.Module):
