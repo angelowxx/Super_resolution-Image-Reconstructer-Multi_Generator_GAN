@@ -156,12 +156,11 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
 
         d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
 
-        g_loss, com_loss, p_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
+        g_loss, p_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
                                                              g_criterion, g_optimizer)
 
         sum_g_loss += g_loss
         sum_d_loss += d_loss
-        sum_c_loss += com_loss
         sum_p_loss += p_loss
         sum_g_d_loss += g_d_loss
 
@@ -170,7 +169,7 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
     avg_loss = sum_g_loss / len(t)
 
     print(f"Epoch [{epoch + 1}/{num_epochs}] {description} Loss: {avg_loss:.6f}")
-    print(f"com_loss: {sum_c_loss / len(t)}, tv_loss: {sum_p_loss / len(t)}, g_d_loss: {sum_g_d_loss / len(t)}")
+    print(f"tv_loss: {sum_p_loss / len(t)}, g_d_loss: {sum_g_d_loss / len(t)}")
     return avg_loss
 
 
@@ -188,7 +187,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     with torch.no_grad():
         real_preds = discriminator(hr_imgs)
 
-    com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
+    tv_loss = g_criterion(hr_imgs, sr_images)
     g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
     g_loss = tv_loss + g_d_loss
 
@@ -201,7 +200,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     del g_loss
     torch.cuda.empty_cache()  # Free unused memory
 
-    return loss_item, com_loss.item(), tv_loss.item(), g_d_loss.item()
+    return loss_item, tv_loss.item(), g_d_loss.item()
 
 
 def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer):

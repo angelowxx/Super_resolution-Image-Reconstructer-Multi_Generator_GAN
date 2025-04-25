@@ -237,6 +237,5 @@ class ReconstructionLoss(nn.Module):
 
         # Combine pixel loss and edge loss
         # edge_loss = torch.sum(weighted_diff) / torch.sum(edges)
-        edge_loss = 0
         tv_loss = self.total_variation_loss(target_images, reversed_edges)
-        return edge_loss, tv_loss
+        return tv_loss
