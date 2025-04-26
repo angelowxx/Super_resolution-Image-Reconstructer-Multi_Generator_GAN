@@ -60,7 +60,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
                        weights_only=True))
         lr_generator = lr_generator / 50
         lr_dicriminator = lr_dicriminator / 50
-        prefix = "Training"
+        prefix = "Post-Training"
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
     d_optimizer = optim.Adam(discriminator.parameters(), lr=lr_dicriminator)
@@ -158,13 +158,13 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer, loss_fn)
+        # d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer, loss_fn)
 
         g_loss, com_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
                                                      g_criterion, g_optimizer, loss_fn)
 
         sum_g_loss += g_loss
-        sum_d_loss += d_loss
+        # sum_d_loss += d_loss
         sum_com_loss += com_loss
         sum_g_d_loss += g_d_loss
 
@@ -186,15 +186,15 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
 
     sr_images = generator(lr_imgs)
 
-    fake_preds = discriminator(sr_images)
+    # fake_preds = discriminator(sr_images)
 
     # with torch.no_grad():
     #    real_preds = discriminator(hr_imgs)
 
     com_loss = g_criterion(hr_imgs, sr_images)
     # g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
-    g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds))
-    g_loss = com_loss + g_d_loss
+    # g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds))
+    g_loss = com_loss # + g_d_loss
 
     g_optimizer.zero_grad()
     g_loss.backward()
