@@ -112,7 +112,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
                         , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer
                         , prefix, Loss_fn)
 
-        # lr_scheduler.step()
+        lr_scheduler.step()
 
         # d_lr_scheduler.step()
 
