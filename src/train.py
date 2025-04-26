@@ -39,7 +39,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     # 确保结果保存目录存在
     os.makedirs(f"results", exist_ok=True)
 
-    lr_generator = 1e-5
+    lr_generator = 1e-4
     lr_dicriminator = lr_generator / 2
 
     g_criterion = ReconstructionLoss().to(device)
