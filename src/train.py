@@ -48,7 +48,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
     discriminator = nn.parallel.DistributedDataParallel(Discriminator().to(device), device_ids=[rank])
 
-    Loss_fn = torch.nn.BCELoss
+    Loss_fn = torch.nn.BCELoss()
 
     vgg_extractor = VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device)
 
