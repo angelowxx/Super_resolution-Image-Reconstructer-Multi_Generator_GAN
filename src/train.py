@@ -40,7 +40,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     os.makedirs(f"results", exist_ok=True)
 
     lr_generator = 1e-4
-    lr_dicriminator = lr_generator / 2
+    lr_dicriminator = lr_generator
 
     g_criterion = ReconstructionLoss().to(device)
 
@@ -58,8 +58,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         # discriminator.load_state_dict(
         #     torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_discriminator_model_0.pth'),
         #                weights_only=True))
-        # lr_generator = lr_generator / 50
-        # lr_dicriminator = lr_dicriminator / 50
+        lr_generator = lr_generator / 10
+        lr_dicriminator = lr_dicriminator / 10
         prefix = "Post-Training"
 
     g_optimizer = optim.Adam(generator.parameters(), lr=lr_generator)
@@ -110,7 +110,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
                         , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer
-                        , prefix, Loss_fn)
+                        , prefix, Loss_fn, continue_training)
 
         lr_scheduler.step()
 
@@ -146,7 +146,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
 def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
                     , g_criterion, device, epoch, num_epochs, discriminator
-                    , d_optimizer, prefix, loss_fn):
+                    , d_optimizer, prefix, loss_fn, continue_training):
     description = prefix
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     sum_g_loss = 0
@@ -158,15 +158,16 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer, loss_fn)
+        if continue_training:
+            d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer, loss_fn)
+            sum_d_loss += d_loss
 
-        # g_loss, com_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
-        #                                              g_criterion, g_optimizer, loss_fn)
+        g_loss, com_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
+                                                     g_criterion, g_optimizer, loss_fn)
 
-        # sum_g_loss += g_loss
-        sum_d_loss += d_loss
-        # sum_com_loss += com_loss
-        # sum_g_d_loss += g_d_loss
+        sum_g_loss += g_loss
+        sum_com_loss += com_loss
+        sum_g_d_loss += g_d_loss
 
         t.set_postfix(g=sum_g_loss / (batch_idx + 1), d=sum_d_loss / (batch_idx + 1))
 
