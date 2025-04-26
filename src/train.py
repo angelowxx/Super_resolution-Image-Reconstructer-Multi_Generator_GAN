@@ -48,6 +48,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
     discriminator = nn.parallel.DistributedDataParallel(Discriminator().to(device), device_ids=[rank])
 
+    Loss_fn = torch.nn.BCELoss
+
     vgg_extractor = VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device)
 
     if continue_training:
@@ -107,7 +109,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
         # if epoch > -1:
         #    g_criterion = PerceptualLoss(device=device)# 内存不够，以后再说
         train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
-                        , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer, prefix)
+                        , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer
+                        , prefix, Loss_fn)
 
         # lr_scheduler.step()
 
@@ -142,26 +145,27 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
 
 def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
-                    , g_criterion, device, epoch, num_epochs, discriminator, d_optimizer, prefix):
+                    , g_criterion, device, epoch, num_epochs, discriminator
+                    , d_optimizer, prefix, loss_fn):
     description = prefix
     t = tqdm(train_loader, desc=f"[{epoch + 1}/{num_epochs}] {description}")
     sum_g_loss = 0
     sum_d_loss = 0
-    sum_c_loss = 0
+    sum_com_loss = 0
     sum_p_loss = 0
     sum_g_d_loss = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
+        d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer, loss_fn)
 
-        g_loss, p_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
-                                                             g_criterion, g_optimizer)
+        g_loss, com_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
+                                                     g_criterion, g_optimizer, loss_fn)
 
         sum_g_loss += g_loss
         sum_d_loss += d_loss
-        sum_p_loss += p_loss
+        sum_com_loss += com_loss
         sum_g_d_loss += g_d_loss
 
         t.set_postfix(g=sum_g_loss / (batch_idx + 1), d=sum_d_loss / (batch_idx + 1))
@@ -169,12 +173,12 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
     avg_loss = sum_g_loss / len(t)
 
     print(f"Epoch [{epoch + 1}/{num_epochs}] {description} Loss: {avg_loss:.6f}")
-    print(f"tv_loss: {sum_p_loss / len(t)}, g_d_loss: {sum_g_d_loss / len(t)}")
+    print(f"com_loss: {sum_com_loss / len(t)}, g_d_loss: {sum_g_d_loss / len(t)}")
     return avg_loss
 
 
 def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
-                    g_criterion, g_optimizer):
+                    g_criterion, g_optimizer, loss_fn):
     torch.autograd.set_detect_anomaly(True)
     # --- Train Generator ---
     generator.train()
@@ -184,11 +188,12 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
 
     fake_preds = discriminator(sr_images)
 
-    with torch.no_grad():
-        real_preds = discriminator(hr_imgs)
+    # with torch.no_grad():
+    #    real_preds = discriminator(hr_imgs)
 
     com_loss = g_criterion(hr_imgs, sr_images)
-    g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
+    # g_d_loss = torch.mean(torch.tanh(real_preds - fake_preds))
+    g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds))
     g_loss = com_loss + g_d_loss
 
     g_optimizer.zero_grad()
@@ -203,7 +208,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     return loss_item, com_loss.item(), g_d_loss.item()
 
 
-def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer):
+def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer, loss_fn):
     torch.autograd.set_detect_anomaly(True)
     # --- Train image_finger_print ---
     discriminator.train()
@@ -215,7 +220,8 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer)
     real_preds = discriminator(hr_imgs)
     fake_preds = discriminator(sr_imgs)
 
-    d_loss = torch.mean(torch.tanh(fake_preds - real_preds))
+    d_loss = loss_fn(real_preds, torch.ones_like(fake_preds)) \
+             + loss_fn(fake_preds, torch.zeros_like(fake_preds))
 
     # Update image_finger_print
     d_optimizer.zero_grad()
