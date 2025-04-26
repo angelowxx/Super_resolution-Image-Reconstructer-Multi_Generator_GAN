@@ -20,9 +20,9 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 5
-s_r = 0.01
-c_nums = 3
+nums_epoch = 25
+s_r = 0.7
+c_nums = 30
 warmUp_epochs = nums_epoch // 5
 
 
@@ -187,14 +187,14 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
 
     sr_images = generator(lr_imgs)
 
-    # fake_preds = discriminator(sr_images)
+    fake_preds = discriminator(sr_images)
 
     # with torch.no_grad():
     #    real_preds = discriminator(hr_imgs)
 
     com_loss = g_criterion(hr_imgs, sr_images)
-    # g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds))
-    g_d_loss = torch.tensor(0)
+    g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds))
+    # g_d_loss = torch.tensor(0)
     g_loss = com_loss # + g_d_loss
 
     g_optimizer.zero_grad()
