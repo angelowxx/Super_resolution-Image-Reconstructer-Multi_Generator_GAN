@@ -20,9 +20,9 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 25
-s_r = 0.7
-c_nums = 30
+nums_epoch = 5
+s_r = 0.01
+c_nums = 3
 warmUp_epochs = nums_epoch // 5
 
 
@@ -40,7 +40,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     os.makedirs(f"results", exist_ok=True)
 
     lr_generator = 1e-4
-    lr_dicriminator = lr_generator
+    lr_dicriminator = lr_generator/2
 
     g_criterion = ReconstructionLoss().to(device)
 
@@ -48,7 +48,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
     discriminator = nn.parallel.DistributedDataParallel(Discriminator().to(device), device_ids=[rank])
 
-    Loss_fn = torch.nn.BCELoss()
+    Loss_fn = torch.nn.MSELoss()
 
     vgg_extractor = VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device)
 
@@ -193,7 +193,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     #    real_preds = discriminator(hr_imgs)
 
     com_loss = g_criterion(hr_imgs, sr_images)
-    g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds))
+    g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds)*0.9)
     # g_d_loss = torch.tensor(0)
     g_loss = com_loss*10 + g_d_loss
 
@@ -221,8 +221,8 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer,
     real_preds = discriminator(hr_imgs)
     fake_preds = discriminator(sr_imgs)
 
-    d_loss = loss_fn(real_preds, torch.ones_like(fake_preds)) \
-             + loss_fn(fake_preds, torch.zeros_like(fake_preds))
+    d_loss = loss_fn(real_preds, torch.ones_like(fake_preds)*0.9) \
+             + loss_fn(fake_preds, torch.zeros_like(fake_preds)+0.1)
 
     # Update image_finger_print
     d_optimizer.zero_grad()
