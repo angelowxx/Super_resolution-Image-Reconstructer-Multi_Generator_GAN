@@ -189,8 +189,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     sr_images = generator(lr_imgs)
 
     fake_preds = discriminator(sr_images)
-    fake_tags = torch.normal(mean=0.9, std=0.1 ** 0.5, size=fake_preds.shape, device=fake_preds.device)
-    fake_tags = torch.clamp(fake_tags, min=0, max=1)
+    fake_tags = torch.ones_like(fake_preds)
 
     # with torch.no_grad():
     #    real_preds = discriminator(hr_imgs)
