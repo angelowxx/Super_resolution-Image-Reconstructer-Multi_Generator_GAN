@@ -214,29 +214,27 @@ class ReconstructionLoss(nn.Module):
 
         return edges
 
-    def total_variation_loss(self, image, reversed_edges):
+    def total_variation_loss(self, image):
         diff_kernel = self.diff_kernel.expand(3, 1, 3, 3).to(image.device)
         # Total Variation Loss (Smoothness penalty)
         diff = F.conv2d(image, diff_kernel, padding=1, groups=3)
 
-        reversed_edges = reversed_edges.to(image.device)
-        diff = torch.abs(diff) * reversed_edges
-        tv_loss = torch.sum(diff)/torch.sum(reversed_edges)
+        tv_loss = torch.mean(diff)
 
         return tv_loss
 
     def forward(self, original_images, target_images):
         # L1 loss for pixel-wise similarity
-        edges = self.high_pass_filter(original_images)
+        # edges = self.high_pass_filter(original_images)
 
-        reversed_edges = 1 - edges
+        # reversed_edges = 1 - edges
 
         diff = torch.abs(original_images - target_images)
 
-        weighted_diff = diff * edges
+        # weighted_diff = diff * edges
 
         # Combine pixel loss and edge loss
         # edge_loss = torch.sum(weighted_diff) / torch.sum(edges)
-        tv_loss = self.total_variation_loss(target_images, reversed_edges)
+        tv_loss = self.total_variation_loss(target_images)
         com_loss = torch.mean(diff)
         return com_loss, tv_loss
