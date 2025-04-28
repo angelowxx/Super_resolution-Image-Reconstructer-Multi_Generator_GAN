@@ -194,7 +194,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     #    real_preds = discriminator(hr_imgs)
 
     com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
-    g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds) * 0.9)
+    g_d_loss = loss_fn(fake_preds, torch.normal(mean=0.9, std=0.1**0.5, size=fake_preds.shape, device=fake_preds.device))
     # g_d_loss = torch.tensor(0)
     g_loss = com_loss + tv_loss + g_d_loss * 0.1
 
@@ -222,8 +222,8 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer,
     real_preds = discriminator(hr_imgs)
     fake_preds = discriminator(sr_imgs)
 
-    d_loss = loss_fn(real_preds, torch.ones_like(fake_preds) * 0.9) \
-             + loss_fn(fake_preds, torch.zeros_like(fake_preds) + 0.1)
+    d_loss = loss_fn(real_preds, torch.normal(mean=0.9, std=0.1**0.5, size=real_preds.shape, device=real_preds.device)) \
+             + loss_fn(fake_preds, torch.normal(mean=0.1, std=0.1**0.5, size=fake_preds.shape, device=fake_preds.device))
 
     # Update image_finger_print
     d_optimizer.zero_grad()
