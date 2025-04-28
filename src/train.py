@@ -40,7 +40,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     os.makedirs(f"results", exist_ok=True)
 
     lr_generator = 1e-4
-    lr_dicriminator = lr_generator/2
+    lr_dicriminator = lr_generator / 2
 
     g_criterion = ReconstructionLoss().to(device)
 
@@ -158,12 +158,12 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
         hr_imgs = hr_imgs.to(device)
         lr_imgs = lr_imgs.to(device)
 
-        if continue_training:
+        if True:
             d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer, loss_fn)
             sum_d_loss += d_loss
 
         g_loss, com_loss, tv_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
-                                                     g_criterion, g_optimizer, loss_fn)
+                                                              g_criterion, g_optimizer, loss_fn)
 
         sum_g_loss += g_loss
         sum_com_loss += com_loss
@@ -194,9 +194,9 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     #    real_preds = discriminator(hr_imgs)
 
     com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
-    g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds)*0.9)
+    g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds) * 0.9)
     # g_d_loss = torch.tensor(0)
-    g_loss = com_loss + tv_loss + g_d_loss*0.1
+    g_loss = com_loss + tv_loss + g_d_loss * 0.1
 
     g_optimizer.zero_grad()
     g_loss.backward()
@@ -222,8 +222,8 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer,
     real_preds = discriminator(hr_imgs)
     fake_preds = discriminator(sr_imgs)
 
-    d_loss = loss_fn(real_preds, torch.ones_like(fake_preds)*0.9) \
-             + loss_fn(fake_preds, torch.zeros_like(fake_preds)+0.1)
+    d_loss = loss_fn(real_preds, torch.ones_like(fake_preds) * 0.9) \
+             + loss_fn(fake_preds, torch.zeros_like(fake_preds) + 0.1)
 
     # Update image_finger_print
     d_optimizer.zero_grad()
