@@ -196,7 +196,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
     g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds) * 0.9)
     # g_d_loss = torch.tensor(0)
-    g_loss = com_loss + tv_loss + g_d_loss * 0.1
+    g_loss = com_loss + tv_loss * 0.1 + g_d_loss * 0.1
 
     g_optimizer.zero_grad()
     g_loss.backward()
