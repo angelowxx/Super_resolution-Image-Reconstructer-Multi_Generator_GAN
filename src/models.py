@@ -50,7 +50,8 @@ class SRResNet(nn.Module):
       - upscale_factor: 放大倍数（默认为 4）
     """
 
-    def __init__(self, in_channels=3, num_features=64, num_residuals=16, num_midLayers=4, upscale_factor=4):
+    def __init__(self, in_channels=3, num_features=64, num_residuals=16,
+                 num_midLayers=1, num_lastLayers=3, upscale_factor=4):
         super(SRResNet, self).__init__()
         # 第一层卷积 + 激活
         self.conv1 = nn.Conv2d(in_channels, num_features, kernel_size=9, padding=4)
@@ -82,7 +83,20 @@ class SRResNet(nn.Module):
         self.upsample = nn.Sequential(*upsample_layers)
 
         # 最后一层卷积，将特征映射到 RGB 通道
-        self.conv3 = nn.Conv2d(num_features, in_channels, kernel_size=9, padding=4)
+        last_layers = []
+        for _ in range(num_lastLayers):
+            last_layers += [
+                nn.Conv2d(num_features, int(num_features//2), kernel_size=3, padding=1),
+                nn.BatchNorm2d(int(num_features//2)),
+                nn.ReLU()
+            ]
+            num_features = int(num_features//2)
+        last_layers += [
+                nn.Conv2d(num_features, in_channels, kernel_size=3, padding=1),
+                nn.BatchNorm2d(in_channels),
+                nn.ReLU()
+            ]
+        self.conv3 = nn.Sequential(*last_layers)
 
     def forward(self, x):
         out1 = self.relu(self.conv1(x))
