@@ -50,7 +50,7 @@ class SRResNet(nn.Module):
       - upscale_factor: 放大倍数（默认为 4）
     """
 
-    def __init__(self, in_channels=3, num_features=64, num_residuals=16, upscale_factor=4):
+    def __init__(self, in_channels=3, num_features=64, num_residuals=16, num_midLayers=4, upscale_factor=4):
         super(SRResNet, self).__init__()
         # 第一层卷积 + 激活
         self.conv1 = nn.Conv2d(in_channels, num_features, kernel_size=9, padding=4)
@@ -61,7 +61,14 @@ class SRResNet(nn.Module):
         self.residual_blocks = nn.Sequential(*residual_blocks)
 
         # 中间卷积层用于整合残差块输出
-        self.conv2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=1)
+        mid_layers = []
+        for _ in range(num_midLayers):
+            mid_layers += [
+                nn.Conv2d(num_features, num_features, kernel_size=3, padding=1),
+                nn.BatchNorm2d(num_features),
+                nn.ReLU()
+            ]
+        self.conv2 = nn.Sequential(*mid_layers)
 
         # 上采样模块：使用 PixelShuffle 实现
         upsample_layers = []

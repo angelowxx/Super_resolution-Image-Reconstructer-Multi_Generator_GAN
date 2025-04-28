@@ -20,9 +20,9 @@ import torchvision.utils as vutils
 
 import torch.nn.functional as F
 
-nums_epoch = 25
-s_r = 0.7
-c_nums = 30
+nums_epoch = 5
+s_r = 0.01
+c_nums = 3
 warmUp_epochs = nums_epoch // 5
 
 
@@ -152,7 +152,7 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
     sum_g_loss = 0
     sum_d_loss = 0
     sum_com_loss = 0
-    sum_p_loss = 0
+    sum_tv_loss = 0
     sum_g_d_loss = 0
     for batch_idx, (hr_imgs, lr_imgs) in enumerate(t):
         hr_imgs = hr_imgs.to(device)
@@ -162,11 +162,12 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
             d_loss = train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer, loss_fn)
             sum_d_loss += d_loss
 
-        g_loss, com_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
+        g_loss, com_loss, tv_loss, g_d_loss = train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
                                                      g_criterion, g_optimizer, loss_fn)
 
         sum_g_loss += g_loss
         sum_com_loss += com_loss
+        sum_tv_loss += tv_loss
         sum_g_d_loss += g_d_loss
 
         t.set_postfix(g=sum_g_loss / (batch_idx + 1), d=sum_d_loss / (batch_idx + 1))
@@ -174,7 +175,7 @@ def train_one_epoch(generator, train_loader, g_optimizer, vgg_extractor
     avg_loss = sum_g_loss / len(t)
 
     print(f"Epoch [{epoch + 1}/{num_epochs}] {description} Loss: {avg_loss:.6f}")
-    print(f"com_loss: {sum_com_loss / len(t)}, g_d_loss: {sum_g_d_loss / len(t)}")
+    print(f"com_loss: {sum_com_loss / len(t)}, tv_loss: {sum_tv_loss / len(t)}, g_d_loss: {sum_g_d_loss / len(t)}")
     return avg_loss
 
 
@@ -192,10 +193,10 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     # with torch.no_grad():
     #    real_preds = discriminator(hr_imgs)
 
-    com_loss = g_criterion(hr_imgs, sr_images)
+    com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
     g_d_loss = loss_fn(fake_preds, torch.ones_like(fake_preds)*0.9)
     # g_d_loss = torch.tensor(0)
-    g_loss = com_loss + g_d_loss*0.1
+    g_loss = com_loss + tv_loss + g_d_loss*0.1
 
     g_optimizer.zero_grad()
     g_loss.backward()
@@ -206,7 +207,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     del g_loss
     torch.cuda.empty_cache()  # Free unused memory
 
-    return loss_item, com_loss.item(), g_d_loss.item()
+    return loss_item, com_loss.item(), tv_loss.item(), g_d_loss.item()
 
 
 def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer, loss_fn):
@@ -302,7 +303,7 @@ def compute_score(model, val_loader, device):
 
 
 if __name__ == "__main__":
-    continue_training = True
+    continue_training = False
     prefix = "Training"
 
     world_size = torch.cuda.device_count()
