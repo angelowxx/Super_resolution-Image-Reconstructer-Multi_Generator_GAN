@@ -219,7 +219,7 @@ class ReconstructionLoss(nn.Module):
         # Total Variation Loss (Smoothness penalty)
         diff = F.conv2d(image, diff_kernel, padding=1, groups=3)
 
-        tv_loss = torch.mean(diff)
+        tv_loss = torch.mean(torch.abs(diff))
 
         return tv_loss
 
