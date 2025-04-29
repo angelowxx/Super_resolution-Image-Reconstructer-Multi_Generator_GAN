@@ -50,7 +50,8 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
 
     Loss_fn = torch.nn.MSELoss()
 
-    vgg_extractor = VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device)
+    # vgg_extractor = VGGFeatureExtractor(layers=('conv3_3', 'conv4_3')).to(device)
+    vgg_extractor = None
 
     if continue_training:
         generator.load_state_dict(torch.load(os.path.join(os.getcwd(), 'results', f'{prefix}_generator_model_0.pth'),
@@ -223,10 +224,10 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer,
     real_preds = discriminator(hr_imgs)
     fake_preds = discriminator(sr_imgs)
 
-    real_tags = torch.normal(mean=0.9, std=0.1**0.5, size=real_preds.shape, device=real_preds.device)
+    real_tags = torch.normal(mean=1, std=0.2**0.5, size=real_preds.shape, device=real_preds.device)
     real_tags = torch.clamp(real_tags, min=0, max=1)
 
-    fake_tags = torch.normal(mean=0.1, std=0.1 ** 0.5, size=fake_preds.shape, device=fake_preds.device)
+    fake_tags = torch.normal(mean=0, std=0.2 ** 0.5, size=fake_preds.shape, device=fake_preds.device)
     fake_tags = torch.clamp(fake_tags, min=0, max=1)
 
     d_loss = loss_fn(real_preds, real_tags) \
