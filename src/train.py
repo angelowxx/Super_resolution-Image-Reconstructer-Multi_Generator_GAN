@@ -40,7 +40,7 @@ def train_example(rank, world_size, num_epochs, continue_training, prefix):
     os.makedirs(f"results", exist_ok=True)
 
     lr_generator = 1e-4
-    lr_dicriminator = lr_generator / 2
+    lr_dicriminator = lr_generator / 3
 
     g_criterion = ReconstructionLoss().to(device)
 
@@ -197,7 +197,7 @@ def train_generator(generator, discriminator, lr_imgs, hr_imgs, vgg_extractor,
     com_loss, tv_loss = g_criterion(hr_imgs, sr_images)
     g_d_loss = loss_fn(fake_preds, fake_tags)
     # g_d_loss = torch.tensor(0)
-    g_loss = com_loss + tv_loss*0.3 + g_d_loss*0.2
+    g_loss = com_loss + tv_loss*0.1 + g_d_loss*0.1
 
     g_optimizer.zero_grad()
     g_loss.backward()
