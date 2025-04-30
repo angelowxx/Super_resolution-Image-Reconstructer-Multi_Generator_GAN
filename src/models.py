@@ -137,15 +137,14 @@ class Discriminator(nn.Module):
             nn.InstanceNorm2d(1),
             nn.Sigmoid(),
 
-            """
+
             # Global average pooling instead of MaxPool
-            nn.AdaptiveAvgPool2d(1),
+            # nn.AdaptiveAvgPool2d(1),
 
             # Fully connected output layer
-            nn.Flatten(),
-            nn.Linear(num_filters * 8, 1),
-            nn.Sigmoid(),
-            """
+            # nn.Flatten(),
+            # nn.Linear(num_filters * 8, 1),
+            # nn.Sigmoid(),
 
         )
 
