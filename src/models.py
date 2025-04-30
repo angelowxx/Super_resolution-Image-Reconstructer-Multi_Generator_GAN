@@ -139,8 +139,10 @@ class Discriminator(nn.Module):
 
             nn.Conv2d(num_filters * 8, num_filters * 8, kernel_size=4, stride=2, padding=1),
             nn.InstanceNorm2d(num_filters * 8),
-            nn.LeakyReLU(0.2),
+            # nn.LeakyReLU(0.2),
+            nn.Sigmoid(),
 
+            """
             # Global average pooling instead of MaxPool
             nn.AdaptiveAvgPool2d(1),
 
@@ -148,6 +150,8 @@ class Discriminator(nn.Module):
             nn.Flatten(),
             nn.Linear(num_filters * 8, 1),
             nn.Sigmoid(),
+            """
+
         )
 
     def forward(self, x):
