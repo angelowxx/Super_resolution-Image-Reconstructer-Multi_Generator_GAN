@@ -224,10 +224,10 @@ def train_discriminator(discriminator, generator, hr_imgs, lr_imgs, d_optimizer,
     real_preds = discriminator(hr_imgs)
     fake_preds = discriminator(sr_imgs)
 
-    real_tags = torch.normal(mean=1, std=0.3**0.5, size=real_preds.shape, device=real_preds.device)
+    real_tags = torch.normal(mean=1.2, std=0.5**0.5, size=real_preds.shape, device=real_preds.device)
     real_tags = torch.clamp(real_tags, min=0, max=1)
 
-    fake_tags = torch.normal(mean=0, std=0.3 ** 0.5, size=fake_preds.shape, device=fake_preds.device)
+    fake_tags = torch.normal(mean=-0.2, std=0.5 ** 0.5, size=fake_preds.shape, device=fake_preds.device)
     fake_tags = torch.clamp(fake_tags, min=0, max=1)
 
     d_loss = loss_fn(real_preds, real_tags) \
